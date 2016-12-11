@@ -23,9 +23,9 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 
 	if (isset($params['filters'])) {
 		if (strpos($params['filters'], ',') != false) {
-			$filters = explode(",", str_replace(" ", "", $params["filters"]));
+			$filters = explode(",", $params["filters"]);
 		} else {
-			$filters = array(str_replace(" ", "", $params["filters"]));
+			$filters = array($params["filters"]);
 		}
 	}
 

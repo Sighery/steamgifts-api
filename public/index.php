@@ -3,7 +3,7 @@ use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
 require '../vendor/autoload.php';
-require '../../simple_html_dom.php';
+require '../../libraries/simple_html_dom.php';
 
 function get_page($url) {
 	$ch = curl_init($url);
