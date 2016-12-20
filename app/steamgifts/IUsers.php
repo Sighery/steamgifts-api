@@ -17,7 +17,8 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 			->withHeader('Content-type', 'application/json')->withJson(array(
 			"errors" => array(
 				"code" => 400,
-				"message" => "The id contains non numeric characters")), 400, JSON_PRETTY_PRINT);
+				"message" => "The id contains non numeric characters"
+			)), 400, JSON_PRETTY_PRINT);
 		}
 		$bid = true;
 
@@ -28,7 +29,8 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 			->withHeader('Content-type', 'application/json')->withJson(array(
 			"errors" => array(
 				"code" => 400,
-				"message" => "The nick contains non alphanumeric characters")), 400, JSON_PRETTY_PRINT);
+				"message" => "The nick contains non alphanumeric characters"
+			)), 400, JSON_PRETTY_PRINT);
 		}
 
 	} else {
@@ -36,7 +38,8 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 		->withHeader('Content-type', 'application/json')->withJson(array(
 		"errors" => array(
 			"code" => 400,
-			"message" => "Missing or invalid required parameters")), 400, JSON_PRETTY_PRINT);
+			"message" => "Missing or invalid required parameters"
+		)), 400, JSON_PRETTY_PRINT);
 	}
 
 
@@ -76,7 +79,8 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 				->withHeader('Content-type', 'application/json')->withJson(array(
 				"errors" => array(
 					"code" => 400,
-					"message" => "Invalid filters")), 400, JSON_PRETTY_PRINT);
+					"message" => "Invalid filters"
+				)), 400, JSON_PRETTY_PRINT);
 			}
 		}
 
@@ -303,6 +307,13 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 
 				unset($index);
 
+				$gifts_feedback_matches;
+				preg_match("/(\d+).+(\d+)/", str_replace(",", "", $elem->children(1)->children(0)->title), $gifts_feedback_matches);
+				$data['gifts_awaiting_feedback'] = intval($gifts_feedback_matches[1]);
+				$data['gifts_not_sent'] = intval($gifts_feedback_matches[2]);
+
+				unset($gifts_feedback_matches);
+
 				if (isset($filters)) {
 					if (in_array('gifts_sent', $filters)) {
 						$filtered_data['gifts_sent'] = $data['gifts_sent'];
@@ -311,16 +322,7 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 					if (in_array('gifts_sent_value', $filters)) {
 						$filtered_data['gifts_sent_value'] = $data['gifts_sent_value'];
 					}
-				}
 
-				$gifts_feedback_matches;
-				preg_match("/(\d+).+(\d+)/", str_replace(",", "", $elem->children(1)->children(0)->title), $gifts_feedback_matches);
-				$data['gifts_awaiting_feedback'] = intval($gifts_feedback_matches[0]);
-				$data['gifts_not_sent'] = intval($gifts_feedback_matches[0]);
-
-				unset($gifts_feedback_matches);
-
-				if (isset($filters)) {
 					if (in_array('gifts_awaiting_feedback', $filters)) {
 						$filtered_data['gifts_awaiting_feedback'] = $data['gifts_awaiting_feedback'];
 					}
