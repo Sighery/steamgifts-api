@@ -1,0 +1,46 @@
+{
+	"0": {
+		"region": "China",
+		"description": ["China"]
+	},
+	"1": {
+		"region": "Germany",
+		"description": ["Germany"]
+	},
+	"2": {
+		"region": "Hong Kong + Taiwan",
+		"description": ["Hong Kong", "Taiwan"]
+	},
+	"3": {
+		"region": "India",
+		"description": ["India"]
+	},
+	"4": {
+		"region": "North America",
+		"description": ["Canada", "United States"]
+	},
+	"5": {
+		"region": "Poland",
+		"description": ["Poland"]
+	},
+	"6": {
+		"region": "RU + CIS",
+		"description": ["Armenia", "Azerbaijan", "Belarus", "Georgia", "Kazakhstan", "Kyrgyzstan", "Moldova", "Russia", "Tajikistan", "Turkmenistan", "Ukraine", "Uzbekistan"]
+	},
+	"7": {
+		"region": "Saudi Arabia + United Arab Emirates",
+		"description": ["Saudi Arabia", "United Arab Emirates"]
+	},
+	"8": {
+		"region": "SE Asia",
+		"description": ["Indonesia", "Malaysia", "Philippines", "Singapore", "Thailand", "Vietnam"]
+	},
+	"9": {
+		"region": "South America",
+		"description": ["Argentina", "Bahamas", "Belize", "Bolivia", "Brazil", "Chile", "Colombia", "Costa Rica", "Ecuador", "El Salvador", "Guatemala", "Guyana", "Honduras", "Mexico", "Nicaragua", "Panama", "Paraguay", "Peru", "Suriname", "Uruguay", "Venezuela"]
+	},
+	"10": {
+		"region": "Turkey",
+		"description": ["Turkey"]
+	}
+}

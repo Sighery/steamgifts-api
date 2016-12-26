@@ -1,0 +1,12 @@
+{
+	"0": "Public",
+	"1": "Private",
+	"2": "Group",
+	"3": "Whitelist",
+	"4": "Region",
+	"5": "Whitelist + Group",
+	"6": "Region + Private",
+	"7": "Region + Group",
+	"8": "Region + Whitelist",
+	"9": "Region + Whitelist + Group"
+}
