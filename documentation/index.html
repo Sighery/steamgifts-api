@@ -1,0 +1,21 @@
+<html>
+<head>
+<title>Main - SG API Documentation</title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="GitHub-repo" href="https://github.com/Sighery/steamgifts-api" target="_blank">
+	<i class="fa fa-github fa-lg" aria-hidden="true"></i>
+	GitHub Repository
+</a>
+<h1 class="title">Documentation</h1>
+<p>I started this project mainly to practice PHP. For now all, from the code to the documentation has been made entirely by me. For more technical information, and the code and how to host your own version of the API, check the GitHub repository linked at the top right where all the code and more technical information is available.</p>
+<p>This API for SteamGifts consists of endpoints, and methods within those endpoints. To call the methods you'll need to call the correct link <b>(please note they are case sensitive)</b> and pass the required arguments. There will be more information available on the pages for each endpoint. These methods will have their own error codes as well, but some errors might be unexpected and there might not be a specific error response for it, so you should prepare your code to handle those errors as well, the API will always return a 200 status code if the response was successful.</p>
+<ul>
+	<li class="endpoint-list"><a class="endpoint-link" href="iusers">IUsers</a>: Stands for <em>InfoUsers</em>. Provides information about users.</li>
+	<li class="endpoint-list"><a class="endpoint-link" href="igiveaways">IGiveaways</a>: Stands for <em>InfoGiveaways</em>. Provides information about giveaways</li>
+	<li class="endpoint-list"><a class="endpoint-link" href="interactions">Interactions</a>: Provides functionality that isn't directly available on SteamGifts but can be accessed by mimicking the JavaScript code and/or implemented by enhancing an already existing feature. Examples of this are things like getting the messages' count and checking if a game is "free" on SG (and thus ungiftable).</li>
+</ul>
+</body>
+</html>

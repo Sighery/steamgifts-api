@@ -1,0 +1,178 @@
+<html>
+<head>
+<title>Interactions - SG API Documentation</title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="main-page-link" href="./">Main</a>
+<a class="GitHub-repo" href="https://github.com/Sighery/steamgifts-api" target="_blank">
+	<i class="fa fa-github fa-lg" aria-hidden="true"></i>
+	GitHub Repository
+</a>
+<h1 class="title">Interactions</h1>
+<p>Provides information and functionality not directly available on SG either by mimicking the JavaScript code of the site, or by enhancing an already existing feature.</p>
+<br>
+<hr class="starting-hr">
+<a class="hidden-link hyperlink-method" href="#GetGameTitle">
+	<i class="fa fa-link"></i>
+	<h2 id="GetGameTitle" class="hyperlink-title">GetGameTitle</h2>
+</a>
+<p>Provides the title of a given Steam app or package as seen on the store. This method uses their API, so it's affected by regional locks, meaning a game available in your region might not be available in the server's region and it won't be able to fetch it. This method has a cache of 24 hours.</p>
+<a class="hidden-link" href="#GetGameTitle-Request">
+	<i class="fa fa-link"></i>
+	<h4 id="GetGameTitle-Request" class="hyperlink-title">REQUEST</h4>
+</a>
+<p>This is a GET request. The link is <a class="generic-link" href="http://api.sighery.com/SteamGifts/Interactions/GetGameTitle/" target="_blank">http://api.sighery.com/SteamGifts/Interactions/GetGameTitle/</a>. The valid arguments are:</p>
+<ul>
+	<li class="arguments-list"><b>id</b>: Required. This value must be the ID of the game.</li>
+	<li class="arguments-list"><b>type</b>: Required. This value must be the type of ID, either 0 for app, or 1 for sub.</li>
+</ul>
+<p><b>Example requests:</b></p>
+<a class="example-link" href="http://api.sighery.com/SteamGifts/Interactions/GetGameTitle/?id=9420&type=0" target="_blank">http://api.sighery.com/SteamGifts/Interactions/GetGameTitle/?id=9420&type=0</a>
+<a class="example-link" href="http://api.sighery.com/SteamGifts/Interactions/GetGameTitle/?id=11732&type=1" target="_blank">http://api.sighery.com/SteamGifts/Interactions/GetGameTitle/?id=11732&type=1</a>
+<a class="hidden-link" href="#GetGameTitle-SuccessfulResponse">
+	<i class="fa fa-link"></i>
+	<h4 id="GetGameTitle-SuccessfulResponse" class="hyperlink-title hyperlink-title-more-margin">SUCCESSFUL RESPONSE</h4>
+</a>
+<p>This method is mainly used for calls between other methods, so some of the keys appearing on the JSON response might not be useful to the normal user and should be stripped:</p>
+<ul>
+	<li class="keys-list"><b>id</b>: Integer. Contains the ID that the given game has on the database.</li>
+	<li class="keys-list"><b>game_id</b>: Integer. Contains the ID of the given game.</li>
+	<li class="keys-list"><b>game_type</b>: Integer. Contains the type of given game as integer. Check <a class="generic-link" href="https://github.com/Sighery/steamgifts-api/blob/master/translations/game-types.json" target="_blank">the translation dictionary for game types</a> on the repository if you want more information.</li>
+	<li class="keys-list"><b>game_title</b>: String. Contains the title of given game.</li>
+</ul>
+<a class="hidden-link" href="#GetGameTitle-Errors">
+	<i class="fa fa-link"></i>
+	<h4 id="GetGameTitle-Errors" class="hyperlink-title">ERRORS</h4>
+</a>
+<p>I try to catch every possible error and produce a proper error response, but that isn't always possible. You should prepare your code to handle any unexpected error reported by the API. You could do this by checking the status code of the response, a successful response will always give back a 200 status code.</p>
+<p>If the error was catched, the error response JSON will only have the keys <code>code</code> for the specific code and <code>description</code> for a short description of the error code unless noted otherwise. The list for catchable errors and their specific codes is the following:</p>
+<ol>
+	<li><p><b>Status code 400</b>: Usually caused by some illegal or missing parameter on the request sent by the user.</p></li>
+	<ul>
+		<li class="keys-list"><b>Code 0</b>: The <code>id</code> argument is invalid, contains non numeric characters.</li>
+		<li class="keys-list"><b>Code 1</b>: The <code>type</code> argument is invalid, contains non numeric characters.</li>
+	</ul>
+	<li><p><b>Status code 500</b>: Usually caused by some error on the request to Steam. Can be caused by it being down as well.</p></li>
+	<ul>
+		<li class="keys-list"><b>Code 0</b>: The request to Steam wasn't successful, most likely down.</li>
+		<li class="keys-list"><b>Code 1</b>: The given ID and type combination either doesn't exist or isn't available on the server's region. This error response has another key named <code>game_title</code> which might or might not be <code>null</code>: it will be <code>null</code> if the given game never existed, or the string of the title if it existed at some point, and the title was recorded but it's not available anymore.</li>
+	</ul>
+</ol>
+<p class="example-error-response">The error response JSON will always have the following structure, however, it might include other keys on top of the <code>code</code> and <code>description</code> keys, check each specific HTML response status code and specific code to know if they include more keys.</p>
+<pre class="code-block"><code>{
+	"errors":
+	{
+		"code": 0,
+		"description": "Description of the HTML response status code and the specific code mentioned on the code key"
+	}
+}</code></pre>
+<hr>
+<a class="hidden-link hyperlink-method" href="#IsFree">
+	<i class="fa fa-link"></i>
+	<h2 id="IsFree" class="hyperlink-title">IsFree</h2>
+</a>
+<p>Provides information on whether the given ID and type is considered "free" on SteamGifts (and thus ungiftable). This method uses the Steam API, so it's affected by Steam being down, and by regional locks as well, meaning a game available in your region might not be available in the server's region and it won't be able to fetch it. This method involves two steps, first getting the game's title from Steam, which is then stored and has a cache of 24 hours, and getting the information on whether that game is free on SteamGifts, which has a cache of 6 hours.</p>
+<a class="hidden-link" href="#IsFree-Request">
+	<i class="fa fa-link"></i>
+	<h4 id="IsFree-Request" class="hyperlink-title">REQUEST</h4>
+</a>
+<p>This is a GET request. The link is <a class="generic-link" href="http://api.sighery.com/SteamGifts/Interactions/IsFree/" target="_blank">http://api.sighery.com/SteamGifts/Interactions/IsFree/</a>. The valid arguments are:</p>
+<ul>
+	<li class="arguments-list"><b>id</b>: Required. This value must be the ID of the game.</li>
+	<li class="arguments-list"><b>type</b>: Required. This value must be the type of ID, either 0 for app, or 1 for sub.</li>
+</ul>
+<p><b>Example requests:</b></p>
+<a class="example-link" href="http://api.sighery.com/SteamGifts/Interactions/IsFree/?id=9420&type=0" target="_blank">http://api.sighery.com/SteamGifts/Interactions/IsFree/?id=9420&type=0</a>
+<a class="example-link" href="http://api.sighery.com/SteamGifts/Interactions/IsFree/?id=11732&type=1" target="_blank">http://api.sighery.com/SteamGifts/Interactions/IsFree/?id=11732&type=1</a>
+<a class="hidden-link" href="#IsFree-SuccessfulResponse">
+	<i class="fa fa-link"></i>
+	<h4 id="IsFree-SuccessfulResponse" class="hyperlink-title hyperlink-title-more-margin">SUCCESSFUL RESPONSE</h4>
+</a>
+<p>The successful JSON response will contain the following keys:</p>
+<ul>
+	<li class="keys-list"><b>id</b>: Integer. Contains the ID of the given game.</li>
+	<li class="keys-list"><b>type</b>: Integer. Contains the type of given game as integer. Check <a class="generic-link" href="https://github.com/Sighery/steamgifts-api/blob/master/translations/game-types.json" target="_blank">the translation dictionary for game types</a> on the repository if you want more information.</li>
+	<li class="keys-list"><b>title</b>: String. Contains the title of given game.</li>
+	<li class="keys-list"><b>free</b>: Boolean. Contains whether the game is considered free or not on SG.</li>
+</ul>
+<a class="hidden-link" href="#IsFree-Errors">
+	<i class="fa fa-link"></i>
+	<h4 id="IsFree-Errors" class="hyperlink-title">ERRORS</h4>
+</a>
+<p>I try to catch every possible error and produce a proper error response, but that isn't always possible. You should prepare your code to handle any unexpected error reported by the API. You could do this by checking the status code of the response, a successful response will always give back a 200 status code.</p>
+<p>If the error was catched, the error response JSON will only have the keys <code>code</code> for the specific code and <code>description</code> for a short description of the error code unless noted otherwise. The list for catchable errors and their specific codes is the following:</p>
+<ol>
+	<li><p><b>Status code 400</b>: Usually caused by some illegal or missing parameter on the request sent by the user.</p></li>
+	<ul>
+		<li class="keys-list"><b>Code 0</b>: The <code>id</code> argument is invalid, contains non numeric characters.</li>
+		<li class="keys-list"><b>Code 1</b>: The <code>type</code> argument is invalid, contains non numeric characters.</li>
+	</ul>
+	<li><p><b>Status code 500</b>: Usually caused by some error on the request to Steam. Can be caused by it being down as well.</p></li>
+	<ul>
+		<li class="keys-list"><b>Code 0</b>: The request to Steam wasn't successful, most likely down.</li>
+		<li class="keys-list"><b>Code 1</b>: The given ID and type combination either doesn't exist or isn't available on the server's region. This error response has another key named <code>game_title</code> which might or might not be <code>null</code>: it will be <code>null</code> if the given game never existed, or the string of the title if it existed at some point, and the title was recorded but it's not available anymore.</li>
+		<li class="keys-list"><b>Code 2</b>: There was some error with the request to SG, it might be down.</li>
+	</ul>
+</ol>
+<p class="example-error-response">The error response JSON will always have the following structure, however, it might include other keys on top of the <code>code</code> and <code>description</code> keys, check each specific HTML response status code and specific code to know if they include more keys.</p>
+<pre class="code-block"><code>{
+	"errors":
+	{
+		"code": 0,
+		"description": "Description of the HTML response status code and the specific code mentioned on the code key"
+	}
+}</code></pre>
+<hr>
+<a class="hidden-link hyperlink-method" href="#GetMessagesCount">
+	<i class="fa fa-link"></i>
+	<h2 id="GetMessagesCount" class="hyperlink-title">GetMessagesCount</h2>
+</a>
+<p><b>PROTECTED AND UNAVAILABLE FOR NOW, CHECK THE REPOSITORY FOR HOW TO HOST YOUR OWN VERSION OF THE API IF YOU NEED THIS FEATURE FOR YOUR ACCOUNT</b>. This method provides the count of messages in your inbox in a JSON format for further integration with RSS feeds or some kind of notifications service. This method has no cache so please limit the amount of requests you do.</p>
+<a class="hidden-link" href="#GetMessagesCount-Request">
+	<i class="fa fa-link"></i>
+	<h4 id="GetMessagesCount-Request" class="hyperlink-title">REQUEST</h4>
+</a>
+<p>This is a GET request. The link is <a class="generic-link" href="http://api.sighery.com/SteamGifts/Interactions/GetMessagesCount/" target="_blank">http://api.sighery.com/SteamGifts/Interactions/GetMessagesCount/</a>. The valid arguments are:</p>
+<ul>
+	<li class="arguments-list"><b>sgsid</b>: Required. The PHPSESSID cookie from your SteamGifts account.</li>
+	<li class="arguments-list"><b>allowed</b>: Required. This is the password needed to be able to use this method. This password is in place until I get confirmation (if) from Cg that I'm allowed to ask users for their PHPSESSID cookie, so for now it's limited to just my own use.</li>
+</ul>
+<p><b>Example requests:</b></p>
+<a class="example-link" href="http://api.sighery.com/SteamGifts/Interactions/GetMessagesCount/?sgsid=phpsessidcookiehere" target="_blank">http://api.sighery.com/SteamGifts/Interactions/GetMessagesCount/?sgsid=phpsessidcookiehere</a>
+<a class="hidden-link" href="#GetMessagesCount-SuccessfulResponse">
+	<i class="fa fa-link"></i>
+	<h4 id="GetMessagesCount-SuccessfulResponse" class="hyperlink-title hyperlink-title-more-margin">SUCCESSFUL RESPONSE</h4>
+</a>
+<p>This response JSON contains a unique key:</p>
+<ul>
+	<li class="keys-list"><b>count</b>: Integer. Contains the count of incoming messages. If the incoming messages number shown on SG is <em>99+</em> the count will always be 100.</li>
+</ul>
+<a class="hidden-link" href="#GetMessagesCount-Errors">
+	<i class="fa fa-link"></i>
+	<h4 id="GetMessagesCount-Errors" class="hyperlink-title">ERRORS</h4>
+</a>
+<p>I try to catch every possible error and produce a proper error response, but that isn't always possible. You should prepare your code to handle any unexpected error reported by the API. You could do this by checking the status code of the response, a successful response will always give back a 200 status code.</p>
+<p>If the error was catched, the error response JSON will only have the keys <code>code</code> for the specific code and <code>description</code> for a short description of the error code unless noted otherwise. The list for catchable errors and their specific codes is the following:</p>
+<ol>
+	<li><p><b>Status code 400</b>: Usually caused by some illegal or missing parameter on the request sent by the user.</p></li>
+	<ul>
+		<li class="keys-list"><b>Code 0</b>: The <code>sgsid</code> argument is either missing or invalid.</li>
+		<li class="keys-list"><b>Code 1</b>: The <code>allowed</code> argument is invalid, meaning it's not the password needed to be able to use this method.</li>
+	</ul>
+	<li><p><b>Status code 500</b>: Usually caused by some error on the request to Steam. Can be caused by it being down as well.</p></li>
+	<ul>
+		<li class="keys-list"><b>Code 0</b>: The request to SteamGifts wasn't successful, most likely down or an invalid PHPSESSID cookie.</li>
+	</ul>
+</ol>
+<p class="example-error-response">The error response JSON will always have the following structure, however, it might include other keys on top of the <code>code</code> and <code>description</code> keys, check each specific HTML response status code and specific code to know if they include more keys.</p>
+<pre class="code-block"><code>{
+	"errors":
+	{
+		"code": 0,
+		"description": "Description of the HTML response status code and the specific code mentioned on the code key"
+	}
+}</code></pre>
+</body>
+</html>

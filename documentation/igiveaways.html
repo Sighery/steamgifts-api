@@ -1,0 +1,94 @@
+<html>
+<head>
+<title>IGiveaways - SG API Documentation</title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="main-page-link" href="./">Main</a>
+<a class="GitHub-repo" href="https://github.com/Sighery/steamgifts-api" target="_blank">
+	<i class="fa fa-github fa-lg" aria-hidden="true"></i>
+	GitHub Repository
+</a>
+<h1 class="title">IGiveaways</h1>
+<p>Stands for <em>InfoGiveaways</em>. Provides information about giveaways.</p>
+<br>
+<hr class="starting-hr">
+<a class="hidden-link hyperlink-method" href="#GetGivInfo">
+	<i class="fa fa-link"></i>
+	<h2 id="GetGivInfo" class="hyperlink-title">GetGivInfo</h2>
+</a>
+<p>Provides general information about a giveaway. This is the information that can be seen when checking the giveaway, the level, the type, the comments, entries, etc. This method implements a cache to avoid sending many unnecesary requests to SG: non-ended giveaways have a cache of 3 hours, while ended giveaways have a cache of 3 days.</p>
+<a class="hidden-link" href="#GetGivInfo-Request">
+	<i class="fa fa-link"></i>
+	<h4 id="GetGivInfo-Request" class="hyperlink-title">REQUEST</h4>
+</a>
+<p>This is a GET request. The link is <a class="generic-link" href="http://api.sighery.com/SteamGifts/IGiveaways/GetGivInfo/" target="_blank">http://api.sighery.com/SteamGifts/IGiveaways/GetGivInfo/</a>. The valid arguments are:</p>
+<ul>
+	<li class="arguments-list"><b>id</b>: Required. This argument value is the giveaway id.</li>
+	<li class="arguments-list"><b>sgsid</b>: Optional. <b>UNAVAILABLE FOR NOW</b>. This argument value is the PHPSESSID cookie so the request is made using your account, bypassing limitations like the region, group, blacklist and/or whitelist.</li>
+	<li class="arguments-list"><b>filters</b>: Optional. This argument takes either a single value, or a comma separated list of values. The valid values are the keys shown on the successful response, so if you just wanted back the level and entries information of an user you would pass in <code>entries,level</code>.</li>
+</ul>
+<p><b>Example requests:</b></p>
+<a class="example-link" href="http://api.sighery.com/SteamGifts/IGiveaways/GetGivInfo/?id=QV5RV" target="_blank">http://api.sighery.com/SteamGifts/IGiveaways/GetGivInfo/?id=QV5RV</a>
+<a class="example-link" href="http://api.sighery.com/SteamGifts/IGiveaways/GetGivInfo/?id=QV5RV&filters=entries" target="_blank">http://api.sighery.com/SteamGifts/IGiveaways/GetGivInfo/?id=QV5RV&filters=entries</a>
+<a class="hidden-link" href="#GetGivInfo-SuccessfulResponse">
+	<i class="fa fa-link"></i>
+	<h4 id="GetGivInfo-SuccessfulResponse" class="hyperlink-title hyperlink-title-more-margin">SUCCESSFUL RESPONSE</h4>
+</a>
+<p>The response is a JSON containing either all the info or the filters you passed in. They keys that appear on the JSON response are:</p>
+<ul>
+	<li class="keys-list"><b>id</b>: String. Contains the ID of the giveaway.</li>
+	<li class="keys-list"><b>ended</b>: Boolean. Contains whether the giveaway has ended already or not.</li>
+	<li class="keys-list"><b>user</b>: String. Contains the nickname of the user who made the giveaway.</li>
+	<li class="keys-list"><b>type</b>: Integer. Contains the type of giveaway. Check <a class="generic-link" href="https://github.com/Sighery/steamgifts-api/blob/master/translations/giveaway-types.json" target="_blank">the translation dictionary for giveaway types</a> on the repository to know what each number means.</li>
+	<li class="keys-list"><b>region</b>: Integer. Contains region of the giveaway if it's a region-locked giveaway, it will return either one of the integers shown on the translation dictionary or 99 if it's a new region not on the dictionary yet, it can also return <code>null</code> if there's no region or the API wasn't able to access the giveaway. The <a class="generic-link" href="https://github.com/Sighery/steamgifts-api/blob/master/translations/regions.json" target="_blank">regions translation dictionary</a> contains more information on what each number equals to. This option will <b>always</b> be <code>null</code> using this version of the API since my account is unable to enter any of the region giveaways.</li>
+	<li class="keys-list"><b>level</b>: Integer. Contains the level of the giveaway.</li>
+	<li class="keys-list"><b>copies</b>: Integer. Contains the amount of copies being given away.</li>
+	<li class="keys-list"><b>points</b>: Integer. Contains the points value of the giveaway.</li>
+	<li class="keys-list"><b>comments</b>: Integer. Contains the number of comments on the giveaway.</li>
+	<li class="keys-list"><b>entries</b>: Integer. Contains the number of entries on the giveaway.</li>
+	<li class="keys-list"><b>starting_time</b>: Integer. Contains the Unix timestamp of when the giveaway starts.</li>
+	<li class="keys-list"><b>ending_time</b>: Integer. Contains the Unix timestamp of when the giveaway ends.</li>
+	<li class="keys-list"><b>description</b>: String. Contains the the description in HTML format, that is, a string of HTML of exactly what the user wrote on the description.</li>
+	<li class="keys-list"><b>game_id</b>: Integer. Contains the Steam ID of the game being given away if it's a Steam game, <code>null</code> otherwise.</li>
+	<li class="keys-list"><b>game_type</b>: Integer. Contains the type of game, or <code>null</code> if the game being given away is not on Steam. Check the <a class="generic-link" href="https://github.com/Sighery/steamgifts-api/blob/master/translations/suspension-types.json" target="_blank">translation dictionary of game_type</a> for more information.</li>
+	<li class="keys-list"><b>game_title</b>: String. Contains the title of the game being given away.</li>
+</ul>
+<a class="hidden-link" href="#GetGivInfo-Errors">
+	<i class="fa fa-link"></i>
+	<h4 id="GetGivInfo-Errors" class="hyperlink-title">ERRORS</h4>
+</a>
+<p>I try to catch every possible error and produce a proper error response, but that isn't always possible. You should prepare your code to handle any unexpected error reported by the API. You could do this by checking the status code of the response, a successful response will always give back a 200 status code.</p>
+<p>If the error was catched, the error response JSON will only have the keys <code>code</code> for the specific code and <code>description</code> for a short description of the error code unless noted otherwise. The list for catchable errors and their specific codes is the following:</p>
+<ol>
+	<li><p><b>Status code 400</b>: Usually caused by some illegal or missing parameter on the request sent by the user.</p></li>
+	<ul>
+		<li class="keys-list"><b>Code 0</b>: The required <code>id</code> is either missing or is invalid.</li>
+		<li class="keys-list"><b>Code 1</b>: The optional <code>sgsid</code> argument is invalid, contains non alphanumeric characters.</li>
+	</ul>
+	<li><p><b>Status code 500</b>: Usually caused by some error on the request to SteamGifts and/or Steam. Can be caused by them being down as well. Some of the error responses might contain the <code>id</code> key as well with the giveaway ID.</p></li>
+	<ul>
+		<li class="keys-list"><b>Code 0</b>: The giveaway either doesn't exist, or there was an error with the request to SG, it could be down.</li>
+		<li class="keys-list"><b>Code 1</b>: The giveaway has been deleted. On top of having the usual <code>code</code> and <code>description</code> keys the error JSON will have the following keys as well: <code>id</code> for the ID of the giveaway (string); <code>user</code> with the nickname of the user who created the giveaway (string); <code>reason</code> with the reason (integer, <a class="generic-link" href="https://github.com/Sighery/steamgifts-api/blob/master/translations/deleted-messages.json" target="_blank">check the deleted reasons translation dictionary</a>. It will return one of those integers or 99 if it's a new one); <code>deleted_time</code> with the Unix timestamp of when was it deleted (integer).</li>
+		<li class="keys-list"><b>Code 2</b>: The giveaway is region-locked and the API couldn't access it. On top of having the usual <code>code</code> and <code>description</code> keys the error JSON will have the following keys as well: <code>id</code> for the ID of the giveaway (string); <code>region</code> with the region of the giveaway (integer, one of the numbers on the <a class="generic-link" href="https://github.com/Sighery/steamgifts-api/blob/master/translations/regions.json" target="_blank">regions translation dictionary</a> or 99 if it's a new region not yet supported).</li>
+		<li class="keys-list"><b>Code 3</b>: The giveaway is for whitelist and certain groups only and the API couldn't access it. On top of having the usual <code>code</code> and <code>description</code> keys the error JSON will have the following keys as well: <code>id</code> for the ID of the giveaway (string).</li>
+		<li class="keys-list"><b>Code 4</b>: The giveaway is for whitelist only and the API couldn't access it. On top of having the usual <code>code</code> and <code>description</code> keys the error JSON will have the following keys as well: <code>id</code> for the ID of the giveaway (string).</li>
+		<li class="keys-list"><b>Code 5</b>: The giveaway is for certain groups only and the API couldn't access it. On top of having the usual <code>code</code> and <code>description</code> keys the error JSON will have the following keys as well: <code>id</code> for the ID of the giveaway (string).</li>
+	</ul>
+</ol>
+<p class="example-error-response">The error response JSON will always have the following structure, however, it might include other keys on top of the <code>code</code> and <code>description</code> keys, check each specific HTML response status code and specific code to know if they include more keys.</p>
+<pre class="code-block"><code>{
+	"errors":
+	{
+		"code": 0,
+		"description": "Description of the HTML response status code and the specific code mentioned on the code key"
+	}
+}</code></pre>
+<a class="hidden-link" href="#GetGivInfo-Notes">
+	<i class="fa fa-link"></i>
+	<h4 id="GetGivInfo-Notes" class="hyperlink-title">NOTES</h4>
+</a>
+<p>This method is connected with multiple tables, and the <a class="generic-link" href="interactions#GetGameTitle">Interactions/GetGameTitle</a> method, and since it depends on Steam not being down the whole thing might fail with a 500 status code error.</p>
+</body>
+</html>

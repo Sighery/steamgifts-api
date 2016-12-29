@@ -1,0 +1,91 @@
+<html>
+<head>
+<title>IUsers - SG API Documentation</title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="main-page-link" href="./">Main</a>
+<a class="GitHub-repo" href="https://github.com/Sighery/steamgifts-api" target="_blank">
+	<i class="fa fa-github fa-lg" aria-hidden="true"></i>
+	GitHub Repository
+</a>
+<h1 class="title">IUsers</h1>
+<p>Stands for <em>InfoUsers</em>. Provides information about users.</p>
+<br>
+<hr class="starting-hr">
+<a class="hidden-link hyperlink-method" href="#GetUserInfo">
+	<i class="fa fa-link"></i>
+	<h2 id="GetUserInfo" class="hyperlink-title">GetUserInfo</h2>
+</a>
+<p>Provides general information about a user. This is the information that can be seen on their profiles. This method has a cache of 6 hours.</p>
+<a class="hidden-link" href="#GetUserInfo-Request">
+	<i class="fa fa-link"></i>
+	<h4 id="GetUserInfo-Request" class="hyperlink-title">REQUEST</h4>
+</a>
+<p>This is a GET request. The link is <a class="generic-link" href="http://api.sighery.com/SteamGifts/IUsers/GetUserInfo/" target="_blank">http://api.sighery.com/SteamGifts/IUsers/GetUserInfo/</a>. The valid arguments are:</p>
+<ul>
+	<li class="arguments-list"><b>id</b>: Required if you don't pass in the <em>user</em> argument. This argument value is the SteamID64 of a user.</li>
+	<li class="arguments-list"><b>user</b>: Required if you don't pass in the <em>id</em> argument. This argument value is the nickname of a user.</li>
+	<li class="arguments-list"><b>filters</b>: Optional. This argument takes either a single value, or a comma separated list of values. The valid values are the keys shown on the successful response, so if you just wanted back the giveaways entered and last online information of a user you would pass in <code>gibs_entered,last_online</code>.</li>
+</ul>
+<p><b>Example requests:</b></p>
+<a class="example-link" href="http://api.sighery.com/SteamGifts/IUsers/GetUserInfo/?user=Sighery" target="_blank">http://api.sighery.com/SteamGifts/IUsers/GetUserInfo/?user=Sighery</a>
+<a class="example-link" href="http://api.sighery.com/SteamGifts/IUsers/GetUserInfo/?id=76561198058891020&filters=nickname,last_online,suspension" target="_blank">http://api.sighery.com/SteamGifts/IUsers/GetUserInfo/?id=76561198058891020&filters=nickname,last_online,suspension</a>
+<a class="hidden-link" href="#GetUserInfo-SuccessfulResponse">
+	<i class="fa fa-link"></i>
+	<h4 id="GetUserInfo-SuccessfulResponse" class="hyperlink-title hyperlink-title-more-margin">SUCCESSFUL RESPONSE</h4>
+</a>
+<p>The response is a JSON containing either all the info or the filters you passed in. They keys that appear on the JSON response are:</p>
+<ul>
+	<li class="keys-list"><b>steamid64</b>: Integer. Contains the steamID64 of the asked user.</li>
+	<li class="keys-list"><b>nickname</b>: String. Contains the nickname of the asked user.</li>
+	<li class="keys-list"><b>role</b>: Integer. Contains the role of the asked user. Check <a class="generic-link" href="https://github.com/Sighery/steamgifts-api/blob/master/translations/roles.json" target="_blank">the translation dictionary for roles</a> on the repository to know what each number means.</li>
+	<li class="keys-list"><b>last_online</b>: Integer. Contains the Unix timestamp of when the user was last online. If user was online when the last check took place the number will be 0.</li>
+	<li class="keys-list"><b>registered</b>: Integer. Contains the Unix timestamp of when the user registered.</li>
+	<li class="keys-list"><b>comments</b>: Integer. Contains the number of total comments by a user.</li>
+	<li class="keys-list"><b>gibs_entered</b>: Integer. Contains the number of total giveaways entered by a user.</li>
+	<li class="keys-list"><b>gifts_won</b>: Integer. Contains the number of total gifts won by a user.</li>
+	<li class="keys-list"><b>gifts_won_value</b>: Float. Contains the dollars value of gifts won by a user.</li>
+	<li class="keys-list"><b>gifts_sent</b>: Integer. Contains the number of total gifts sent by a user.</li>
+	<li class="keys-list"><b>gifts_sent_value</b>: Float. Contains the dollars value of gifts sent by a user.</li>
+	<li class="keys-list"><b>gifts_awaiting_feedback</b>: Integer. Contains the number of gifts sent by a user that are still awaiting feedback.</li>
+	<li class="keys-list"><b>gifts_not_sent</b>: Integer. Contains the number of gifts sent by a user that were marked as not received.</li>
+	<li class="keys-list"><b>contributor_level</b>: Float. Contains the contributor level of a user.</li>
+	<li class="keys-list"><b>suspension</b>: Dictionary. Contains the keys <code>type</code> to indicate the type of suspension or <code>null</code> if there is no suspension. <a class="generic-link" href="https://github.com/Sighery/steamgifts-api/blob/master/translations/suspension-types.json" target="_blank">Check the translation dictionary to know what each number equals to</a>. Also the <code>end_time</code> key that contains a Unix timestamp of when the suspension ends. Example:
+	<pre class="code-block" style="width: 350px;"><code>{
+	"suspension":
+	{
+		"type": 0,
+		"end_time": 872899200
+	}
+}</code></pre></li>
+</ul>
+<a class="hidden-link" href="#GetUserInfo-Errors">
+	<i class="fa fa-link"></i>
+	<h4 id="GetUserInfo-Errors" class="hyperlink-title">ERRORS</h4>
+</a>
+<p>I try to catch every possible error and produce a proper error response, but that isn't always possible. You should prepare your code to handle any unexpected error reported by the API. You could do this by checking the status code of the response, a successful response will always give back a 200 status code.</p>
+<p>If the error was catched, the error response JSON will only have the keys <code>code</code> for the specific code and <code>description</code> for a short description of the error code unless noted otherwise. The list for catchable errors and their specific codes is the following:</p>
+<ol>
+	<li><p><b>Status code 400</b>: Usually caused by some illegal or missing parameter on the request sent by the user.</p></li>
+	<ul>
+		<li class="keys-list"><b>Code 0</b>: Both the <code>id</code> and <code>user</code> arguments are missing or are invalid.</li>
+		<li class="keys-list"><b>Code 1</b>: The <code>id</code> argument is invalid, contains non numeric characters.</li>
+		<li class="keys-list"><b>Code 2</b>: The <code>user</code> argument is invalid, contains non alphanumeric characters.</li>
+	</ul>
+	<li><p><b>Status code 500</b>: Usually caused by some error on the request to SteamGifts. Can be caused by it being down as well.</p></li>
+	<ul>
+		<li class="keys-list"><b>Code 0</b>: The user either doesn't exist, or there was an error with the request to SG, it could be down.</li>
+	</ul>
+</ol>
+<p class="example-error-response">The error response JSON will always have the following structure, however, it might include other keys on top of the <code>code</code> and <code>description</code> keys, check each specific HTML response status code and specific code to know if they include more keys.</p>
+<pre class="code-block"><code>{
+	"errors":
+	{
+		"code": 0,
+		"description": "Description of the HTML response status code and the specific code mentioned on the code key"
+	}
+}</code></pre>
+</body>
+</html>
