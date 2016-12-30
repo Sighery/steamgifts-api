@@ -8,7 +8,8 @@ require '../../libraries/simple_html_dom.php';
 
 $app = new \Slim\App;
 
-require_once("../app/steamgifts/IUsers.php");
-require_once("../app/steamgifts/Interactions.php");
+include_once("../app/steamgifts/IUsers.php");
+include_once("../app/steamgifts/IGiveaways.php");
+include_once("../app/steamgifts/Interactions.php");
 
 $app->run();
