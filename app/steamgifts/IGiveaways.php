@@ -711,10 +711,10 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 	forEach($sidebar_numbers as $row) {
 		switch ($row->find('.sidebar__navigation__item__name', 0)->innertext) {
 			case 'Comments':
-				$data['comments'] = intval($row->find('.sidebar__navigation__item__count', 0)->innertext);
+				$data['comments'] = intval(str_replace(",", "", $row->find('.sidebar__navigation__item__count', 0)->innertext));
 				break;
 			case 'Entries':
-				$data['entries'] = intval($row->find('.sidebar__navigation__item__count', 0)->innertext);
+				$data['entries'] = intval(str_replace(",", "", $row->find('.sidebar__navigation__item__count', 0)->innertext));
 				break;
 		}
 	}
