@@ -419,11 +419,12 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 			$data['suspension']['end_time'] = intval($suspension_time->children(0)->getAttribute('data-timestamp'));
 		}
 		unset($suspension_time);
-
-		if (isset($filters) && in_array('suspension', $filters)) {
-			$filtered_data['suspension'] = $data['suspension'];
-		}
 	}
+
+	if ($bfilters && in_array('suspension', $filters)) {
+		$filtered_data['suspension'] = $data['suspension'];
+	}
+
 	unset($suspension_info);
 
 
@@ -442,7 +443,7 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 		//echo "Inserting info\n";
 		$sql_string = "INSERT INTO IUsers (steamid64, nickname, role, last_online, registered, comments, gibs_entered, gifts_won, gifts_won_value, gifts_sent, gifts_sent_value, gifts_awaiting_feedback, gifts_not_sent, contributor_level, suspension_type, suspension_end_time, unavailable) VALUES (:steamid64, :nickname, :role, :last_online, :registered, :comments, :gibs_entered, :gifts_won, :gifts_won_value, :gifts_sent, :gifts_sent_value, :gifts_awaiting_feedback, :gifts_not_sent, :contributor_level, :suspension_type, :suspension_end_time, 0)";
 
-	} elseif ($row['count'] === 0 && $nickname['count'] === 1) {
+	} elseif ($row['count'] === 0 && $nickname_row['count'] === 1) {
 		//echo "Updating info missing steamid64\n";
 		$sql_string = "UPDATE IUsers SET steamid64=steamid64=:steamid64, nickname=:nickname, role=:role, last_online=:last_online, registered=:registered, comments=:comments, gibs_entered=:gibs_entered, gifts_won=:gifts_won, gifts_won_value=:gifts_won_value, gifts_sent=:gifts_sent, gifts_sent_value=:gifts_sent_value, gifts_awaiting_feedback=:gifts_awaiting_feedback, gifts_not_sent=:gifts_not_sent, contributor_level=:contributor_level, suspension_type=:suspension_type, suspension_end_time=:suspension_end_time, unavailable=0, last_checked=NULL WHERE id=" . $nickname_row['id'];
 
