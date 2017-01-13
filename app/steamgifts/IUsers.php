@@ -114,9 +114,9 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 		//echo $filters_string;
 
 		if ($bid) {
-			$stmt = $db->query("SELECT COUNT(*) AS count, " . $filters_string . ", unavailable, UNIX_TIMESTAMP(last_checked) AS last_checked FROM IUsers WHERE steamid64=" . $id);
+			$stmt = $db->query("SELECT COUNT(*) AS count, " . $filters_string . ", unavailable, steamid64 as steamid64private, UNIX_TIMESTAMP(last_checked) AS last_checked FROM IUsers WHERE steamid64=" . $id);
 		} else {
-			$stmt = $db->query("SELECT COUNT(*) AS count, " . $filters_string . ", unavailable, UNIX_TIMESTAMP(last_checked) AS last_checked FROM IUsers WHERE nickname='" . $user . "'");
+			$stmt = $db->query("SELECT COUNT(*) AS count, " . $filters_string . ", unavailable, steamid64 as steamid64private, UNIX_TIMESTAMP(last_checked) AS last_checked FROM IUsers WHERE nickname='" . $user . "'");
 		}
 
 		unset($filters_string);
@@ -138,13 +138,14 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 	//data is outdated. If any of these is true, meaning 0 rows or outdated data,
 	//we ask SG for the profile instead
 	$row = $stmt->fetch(PDO::FETCH_ASSOC);
-	if ($row['count'] == 1 && isset($row['steamid64']) && $row['unavailable'] === 0 && (time() - $row['last_checked']) <= MAX_TIME_PROFILE_CACHE) {
+	if ($row['count'] === 1 && isset($row['steamid64private']) && $row['unavailable'] === 0 && (time() - $row['last_checked']) <= MAX_TIME_PROFILE_CACHE) {
 		//echo "If row count == 1\n";
 		if ($bfilters) {
 			$filtered_data = $row;
 			unset($filtered_data['count']);
 			unset($filtered_data['last_checked']);
 			unset($filtered_data['unavailable']);
+			unset($filtered_data['steamid64private']);
 
 			if ($bfilters_suspension) {
 				unset($filtered_data['suspension_type']);
