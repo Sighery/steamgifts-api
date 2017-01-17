@@ -778,12 +778,12 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 			if ($api_request === false) {
 				return $response->withHeader('Access-Control-Allow-Origin', '*')
 				->withHeader('Content-type', 'application/json')
-				->withJson(json_encode($api_request), 500, JSON_PRETTY_PRINT);
+				->withJson(json_decode($api_request, true), 500, JSON_PRETTY_PRINT);
 			}
 
 			//var_dump($api_request);
 
-			$api_request(json_encode($api_request));
+			$api_request = json_decode($api_request, true);
 
 			$data['game_title'] = $api_request['game_title'];
 			$gametitles_inserted_id = $api_request['id'];
