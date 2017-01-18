@@ -545,7 +545,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 
 	$data = array(
 		'id' => null,
-		'ended' => null,
+		'ended' => false,
 		'user' => null,
 		'type' => null,
 		'region' => null,
@@ -553,7 +553,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 		'copies' => 1,
 		'points' => null,
 		'comments' => null,
-		'entries' => null,
+		'entries' => 0,
 		'starting_time' => null,
 		'ending_time' => null,
 		'description' => null,
@@ -633,8 +633,6 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 
 			if (time() >= $ending_time) {
 				$data['ended'] = true;
-			} else {
-				$data['ended'] = false;
 			}
 
 			unset($ending_time);
