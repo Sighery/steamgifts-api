@@ -369,7 +369,7 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 				unset($index);
 
 				$gifts_feedback_matches;
-				preg_match("/(\d+).+(\d+)/", str_replace(",", "", $elem->children(1)->children(0)->title), $gifts_feedback_matches);
+				preg_match("/(\d+).+?(\d+)/", $elem->children(1)->children(0)->title, $gifts_feedback_matches);
 				$data['gifts_awaiting_feedback'] = intval($gifts_feedback_matches[1]);
 				$data['gifts_not_sent'] = intval($gifts_feedback_matches[2]);
 
