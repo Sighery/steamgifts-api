@@ -48,8 +48,9 @@
 	<li class="keys-list"><b>points</b>: Integer. Contains the points value of the giveaway.</li>
 	<li class="keys-list"><b>comments</b>: Integer. Contains the number of comments on the giveaway.</li>
 	<li class="keys-list"><b>entries</b>: Integer. Contains the number of entries on the giveaway.</li>
-	<li class="keys-list"><b>starting_time</b>: Integer. Contains the Unix timestamp of when the giveaway starts.</li>
-	<li class="keys-list"><b>ending_time</b>: Integer. Contains the Unix timestamp of when the giveaway ends.</li>
+	<li class="keys-list"><b>created_time</b>: Integer. Contains the Unix timestamp of when the giveaway was created.</li>
+	<li class="keys-list"><b>starting_time</b>: Integer. Contains the Unix timestamp of when the giveaway starts. Will be <code>null</code> if the giveaway started immediately or if it didn't but the API didn't check it until it started.</li>
+	<li class="keys-list"><b>ending_time</b>: Integer. Contains the Unix timestamp of when the giveaway ends. Will be <code>null</code> if the giveaway hasn't started yet.</li>
 	<li class="keys-list"><b>description</b>: String. Contains the the description in HTML format, that is, a string of HTML of exactly what the user wrote on the description.</li>
 	<li class="keys-list"><b>game_id</b>: Integer. Contains the Steam ID of the game being given away if it's a Steam game, <code>null</code> otherwise.</li>
 	<li class="keys-list"><b>game_type</b>: Integer. Contains the type of game, or <code>null</code> if the game being given away is not on Steam. Check the <a class="generic-link" href="https://github.com/Sighery/steamgifts-api/blob/master/translations/game-types.json" target="_blank">translation dictionary of game_type</a> for more information.</li>
