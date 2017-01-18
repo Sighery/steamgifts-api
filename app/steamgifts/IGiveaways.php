@@ -1,9 +1,10 @@
 <?php
 require_once("utilities.php");
+require_once("dbconn.php");
 
 $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
-	define('MAX_TIME_GIVEAWAY_CACHE', 10800);
-	define('MAX_TIME_ENDED_GIVEAWAY_CACHE', 259200);
+	define('MAX_TIME_GIVEAWAY_CACHE', 10800); //3hours
+	define('MAX_TIME_ENDED_GIVEAWAY_CACHE', 259200); //3days
 
 	global $db;
 
@@ -50,7 +51,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 	);
 
 	// Get local data if any
-	$stmt = $db->prepare("SELECT COUNT(*) AS count, id, ended, deleted, deleted_reason, deleted_time, blacklisted, not_whitelisted, not_region, region, not_groups, not_wl_groups, iusers_id, giv_type, level, copies, points, gametitles_id, not_steam_game, starting_time, ending_time, comments, entries, description, unavailable, UNIX_TIMESTAMP(last_checked) AS last_checked FROM IGiveaways WHERE giv_id=:giv_id");
+	$stmt = $db->prepare("SELECT COUNT(*) AS count, id, ended, deleted, deleted_reason, deleted_time, blacklisted, not_whitelisted, not_region, region, not_groups, not_wl_groups, iusers_id, giv_type, level, copies, points, gametitles_id, not_steam_game, created_time, starting_time, ending_time, comments, entries, description, unavailable, UNIX_TIMESTAMP(last_checked) AS last_checked FROM IGiveaways WHERE giv_id=:giv_id");
 	$stmt->execute(array(
 		':giv_id' => $giv_id
 	));
@@ -125,6 +126,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 				'points' => $giveaway_row['points'],
 				'comments' => $giveaway_row['comments'],
 				'entries' => $giveaway_row['entries'],
+				'created_time' => $giveaway_row['created_time'],
 				'starting_time' => $giveaway_row['starting_time'],
 				'ending_time' => $giveaway_row['ending_time'],
 				'description' => $giveaway_row['description'],
@@ -176,6 +178,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 			'points' => $giveaway_row['points'],
 			'comments' => $giveaway_row['comments'],
 			'entries' => $giveaway_row['entries'],
+			'created_time' => $giveaway_row['created_time'],
 			'starting_time' => $giveaway_row['starting_time'],
 			'ending_time' => $giveaway_row['ending_time'],
 			'description' => $giveaway_row['description'],
@@ -229,7 +232,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 
 			unset($stmt);
 		} else {
-			$stmt = $db->prepare("UPDATE IGiveaways SET last_ckeched=NULL WHERE id=:id");
+			$stmt = $db->prepare("UPDATE IGiveaways SET last_ckeched=NULL, unavailable=1 WHERE id=:id");
 			$stmt->execute(array(
 				':id' => $giveaway_row['id']
 			));
@@ -554,6 +557,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 		'points' => null,
 		'comments' => null,
 		'entries' => 0,
+		'created_time' => null,
 		'starting_time' => null,
 		'ending_time' => null,
 		'description' => null,
@@ -621,30 +625,34 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 		'whitelist' => false,
 		'group' => false
 	);
-	$featured_columns = $html->find('.featured__column');
-	forEach($featured_columns as $column) {
+
+	// Get all info on the featured columns: level, user, giv_type, etc
+	forEach($html->find('.featured__column') as $column) {
 		$column_class = $column->class;
 
 		if ($column_class == "featured__column") {
-			$ending_time = $column->find('span', 0);
-			$ending_time = intval($ending_time->getAttribute('data-timestamp'));
+			$start_end_time = $column->find('span', 0);
+			$start_end_time = intval($start_end_time->getAttribute('data-timestamp'));
 
-			$data['ending_time'] = $ending_time;
-
-			if (time() >= $ending_time) {
-				$data['ended'] = true;
+			if (strpos($column->plaintext, "Begins in") !== false) {
+				$data['starting_time'] = $start_end_time;
+			} else {
+				$data['ending_time'] = $start_end_time;
+				if (time() >= $ending_time) {
+					$data['ended'] = true;
+				}
 			}
 
-			unset($ending_time);
+			unset($start_end_time);
 
 		} elseif (strpos($column_class, 'featured__column--width-fill') !== false) {
-			$starting_time = $column->find('span', 0);
-			$data['starting_time'] = intval($starting_time->getAttribute('data-timestamp'));
+			$created_time = $column->find('span', 0);
+			$data['created_time'] = intval($created_time->getAttribute('data-timestamp'));
 
 			$user = $column->find("a[href*='/user/']", 0);
 			$data['user'] = $user->innertext;
 
-			unset($starting_time);
+			unset($created_time);
 			unset($user);
 
 		} elseif (strpos($column_class, 'featured__column--invite-only') !== false) {
@@ -674,9 +682,9 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 			unset($level);
 		}
 	}
-	unset($featured_columns);
 
-	// Types setting
+
+	// Generate the giv_type int
 	if ($bTypes['region'] && $bTypes['whitelist'] && $btypes['group']) {
 		$data['type'] = 9;
 	} elseif ($bTypes['region'] && $bTypes['whitelist']) {
@@ -797,7 +805,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 
 	if ($giveaway_row['count'] === 0) {
 		if (!is_null($store_link)) {
-			$stmt = $db->prepare("INSERT INTO IGiveaways (blacklisted, ended, region, giv_id, iusers_id, giv_type, level, copies, points, gametitles_id, starting_time, ending_time, comments, entries, description) VALUES (:blacklisted, :ended, :region, :giv_id, :iusers_id, :giv_type, :level, :copies, :points, :gametitles_id, :starting_time, :ending_time, :comments, :entries, :description)");
+			$stmt = $db->prepare("INSERT INTO IGiveaways (blacklisted, ended, region, giv_id, iusers_id, giv_type, level, copies, points, gametitles_id, created_time, starting_time, ending_time, comments, entries, description) VALUES (:blacklisted, :ended, :region, :giv_id, :iusers_id, :giv_type, :level, :copies, :points, :gametitles_id, :created_time, :starting_time, :ending_time, :comments, :entries, :description)");
 			$stmt->execute(array(
 				':blacklisted' => (int)$bBL,
 				':ended' => (int)$data['ended'],
@@ -809,6 +817,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 				':copies' => $data['copies'],
 				':points' => $data['points'],
 				':gametitles_id' => $gametitles_inserted_id,
+				':created_time' => $data['created_time'],
 				':starting_time' => $data['starting_time'],
 				':ending_time' => $data['ending_time'],
 				':comments' => $data['comments'],
@@ -818,7 +827,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 
 			unset($stmt);
 		} else {
-			$stmt = $db->prepare("INSERT INTO IGiveaways (blacklisted, ended, region, giv_id, iusers_id, giv_type, level, copies, points, not_steam_game, starting_time, ending_time, comments, entries, description) VALUES (:blacklisted, :ended, :region, :giv_id, :iusers_id, :giv_type, :level, :copies, :points, :not_steam_game, :starting_time, :ending_time, :comments, :entries, :description)");
+			$stmt = $db->prepare("INSERT INTO IGiveaways (blacklisted, ended, region, giv_id, iusers_id, giv_type, level, copies, points, not_steam_game, created_time, starting_time, ending_time, comments, entries, description) VALUES (:blacklisted, :ended, :region, :giv_id, :iusers_id, :giv_type, :level, :copies, :points, :not_steam_game, :created_time, :starting_time, :ending_time, :comments, :entries, :description)");
 			$stmt->execute(array(
 				':blacklisted' => (int)$bBL,
 				':ended' => (int)$data['ended'],
@@ -830,6 +839,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 				':copies' => $data['copies'],
 				':points' => $data['points'],
 				':not_steam_game' => $data['game_title'],
+				':created_time' => $data['created_time'],
 				':starting_time' => $data['starting_time'],
 				':ending_time' => $data['ending_time'],
 				':comments' => $data['comments'],
@@ -839,7 +849,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 		}
 	} else {
 		if (!is_null($store_link)) {
-			$stmt = $db->prepare("UPDATE IGiveaways SET blacklisted=:blacklisted, ended=:ended, region=:region, giv_type=:giv_type, level=:level, copies=:copies, points=:points, gametitles_id=:gametitles_id, starting_time=:starting_time, ending_time=:ending_time, comments=:comments, entries=:entries, description=:description WHERE giv_id=:giv_id");
+			$stmt = $db->prepare("UPDATE IGiveaways SET blacklisted=:blacklisted, ended=:ended, region=:region, giv_type=:giv_type, level=:level, copies=:copies, points=:points, gametitles_id=:gametitles_id, ending_time=:ending_time, comments=:comments, entries=:entries, description=:description WHERE giv_id=:giv_id");
 			$stmt->execute(array(
 				':blacklisted' => (int)$bBL,
 				':ended' => (int)$data['ended'],
@@ -849,7 +859,6 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 				':copies' => $data['copies'],
 				':points' => $data['points'],
 				':gametitles_id' => $gametitles_inserted_id,
-				':starting_time' => $data['starting_time'],
 				':ending_time' => $data['ending_time'],
 				':comments' => $data['comments'],
 				':entries' => $data['entries'],
@@ -859,7 +868,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 
 			unset($stmt);
 		} else {
-			$stmt = $db->prepare("UPDATE IGiveaways SET blacklisted=:blacklisted, ended=:ended, region=:region, giv_type=:giv_type, level=:level, copies=:copies, points=:points, not_steam_game=:not_steam_game, starting_time=:starting_time, ending_time=:ending_time, comments=:comments, entries=:entries, description=:description WHERE giv_id=:giv_id");
+			$stmt = $db->prepare("UPDATE IGiveaways SET blacklisted=:blacklisted, ended=:ended, region=:region, giv_type=:giv_type, level=:level, copies=:copies, points=:points, not_steam_game=:not_steam_game, ending_time=:ending_time, comments=:comments, entries=:entries, description=:description WHERE giv_id=:giv_id");
 			$stmt->execute(array(
 				':blacklisted' => (int)$bBL,
 				':ended' => (int)$data['ended'],
@@ -869,7 +878,6 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 				':copies' => $data['copies'],
 				':points' => $data['points'],
 				':not_steam_game' => $data['game_title'],
-				':starting_time' => $data['starting_time'],
 				':ending_time' => $data['ending_time'],
 				':comments' => $data['comments'],
 				':entries' => $data['entries'],
