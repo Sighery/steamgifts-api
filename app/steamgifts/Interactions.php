@@ -105,7 +105,7 @@ $app->get('/SteamGifts/Interactions/GetGameTitle/', function($request, $response
 				));
 				unset($stmt);
 			} else {
-				$stmt = $db->prepare("UPDATE GameTitles SET unavailable=:unavailable, last_checked=NULL WHERE game_type=:game_type AND game_id=:game_id");
+				$stmt = $db->prepare("UPDATE GameTitles SET unavailable=:unavailable, last_checked=NULL WHERE game_id=:game_id AND game_type=:game_type");
 				$stmt->execute(array(
 					':unavailable' => 1,
 					':game_type' => $type,
@@ -125,12 +125,13 @@ $app->get('/SteamGifts/Interactions/GetGameTitle/', function($request, $response
 
 		// At this point the Steam API response was successful
 		$data['game_title'] = $json[$str_id]['data']['name'];
+		$title = $data['game_title'];
 		//echo "title is: " . $title;
 		//echo "\n";
 		//echo "gamtitles_row title is: " . $gametitles_row['game_title'];
 
 
-		if ($gametitles_row['count'] == 1 && ($gametitles_row['game_title'] == $title || $gametitles_row['unavailable'] == 1)) {
+		if ($gametitles_row['count'] === 1 && ($gametitles_row['game_title'] == $title || $gametitles_row['unavailable'] === 1)) {
 			// There was that info but the data was outdated. Title is still the
 			//same or unavailable was 1
 			//echo "1 if. 3 if";
@@ -138,7 +139,7 @@ $app->get('/SteamGifts/Interactions/GetGameTitle/', function($request, $response
 			$db->query("UPDATE GameTitles SET unavailable=0, last_checked=NULL WHERE id=" . $gametitles_row['id']);
 
 			$data['id'] = $gametitles_row['id'];
-		} elseif ($gametitles_row['count'] == 1 && ($gametitles_row['game_title'] != $title || $gametitles_row['unavailable'] == 1)) {
+		} elseif ($gametitles_row['count'] === 1 && ($gametitles_row['game_title'] != $title || $gametitles_row['unavailable'] === 1)) {
 			// There was that info but the data was outdated. Title isn't the
 			//same or unavailable was 1
 			//echo "1 if. 3 elseif";
@@ -164,7 +165,7 @@ $app->get('/SteamGifts/Interactions/GetGameTitle/', function($request, $response
 			$stmt->execute(array(
 				':game_type' => $type,
 				':game_id' => $id,
-				':game_title' => $json[$str_id]['data']['name'],
+				':game_title' => $title,
 				':unavailable' => 0
 			));
 
@@ -428,7 +429,7 @@ $app->get('/SteamGifts/Interactions/IsFree/', function($request, $response) {
 
 	$gamesfree_row = $stmt->fetch(PDO::FETCH_ASSOC);
 	unset($stmt);
-	if ($gamesfree_row['count'] == 0 || (time() - $gamesfree_row['last_checked']) >= MAX_TIME_FREE_CACHE) {
+	if ($gamesfree_row['count'] === 0 || (time() - $gamesfree_row['last_checked']) >= MAX_TIME_FREE_CACHE) {
 		// There was either no data or it was outdated
 		//echo "3 if";
 		//echo "\n";
