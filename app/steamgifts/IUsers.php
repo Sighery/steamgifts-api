@@ -19,7 +19,7 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 			"errors" => array(
 				"code" => 1,
 				"description" => "The id contains non numeric characters"
-			)), 400, JSON_PRETTY_PRINT);
+			)), 400);
 		}
 		$bid = true;
 
@@ -31,7 +31,7 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 			"errors" => array(
 				"code" => 2,
 				"description" => "The nick contains non alphanumeric characters"
-			)), 400, JSON_PRETTY_PRINT);
+			)), 400);
 		}
 
 	} else {
@@ -40,7 +40,7 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 		"errors" => array(
 			"code" => 0,
 			"description" => "Missing or invalid required parameters"
-		)), 400, JSON_PRETTY_PRINT);
+		)), 400);
 	}
 
 
@@ -81,7 +81,7 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 				"errors" => array(
 					"code" => 3,
 					"description" => "Invalid filters"
-				)), 400, JSON_PRETTY_PRINT);
+				)), 400);
 			}
 		}
 
@@ -142,6 +142,10 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 		//echo "If row count == 1\n";
 		if ($bfilters) {
 			$filtered_data = $row;
+			if (array_key_exists("steamid64", $row)) {
+				$filtered_data['steamid64_str'] = strval($row['steamid64']);
+			}
+
 			unset($filtered_data['count']);
 			unset($filtered_data['last_checked']);
 			unset($filtered_data['unavailable']);
@@ -160,10 +164,11 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 			//echo "If row count == 1, bfilters true\n";
 			return $response->withHeader('Access-Control-Allow-Origin', '*')
 			->withHeader('Content-type', 'application/json')
-			->withJson($filtered_data, 200, JSON_PRETTY_PRINT);
+			->withJson($filtered_data, 200);
 
 		} else {
 			$data = $row;
+			$data['steamid64_str'] = strval($row['steamid64']);
 			unset($data['suspension_type']);
 			unset($data['suspension_end_time']);
 			unset($data['count']);
@@ -178,7 +183,7 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 			//echo "If row count == 1, bfilters false\n";
 			return $response->withHeader('Access-Control-Allow-Origin', '*')
 			->withHeader('Content-type', 'application/json')
-			->withJson($data, 200, JSON_PRETTY_PRINT);
+			->withJson($data, 200);
 		}
 	} elseif ($row['count'] === 1 && $row['unavailable'] === 1 && (time() - $row['last_checked']) <= MAX_TIME_PROFILE_CACHE) {
 		// If unavailable is 1 we return a 500
@@ -188,7 +193,7 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 		'errors' => array(
 			'code' => 0,
 			'description' => 'There was some error with the request to SG or the user doesn\'t exist'
-		)), 500, JSON_PRETTY_PRINT);
+		)), 500);
 	} else {
 		//echo "Else, requesting page\n";
 		// If count happened to be 0 or outdated data, we then request the page
@@ -240,15 +245,16 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 		'errors' => array(
 			'code' => 0,
 			'description' => 'There was some error with the request to SG or the user doesn\'t exist'
-		)), 500, JSON_PRETTY_PRINT);
+		)), 500);
 	}
 
 	// Parsing the html file
 	$html = str_get_html($page_req);
 
-	// Creating the barebone structure of the response JSON
+	// Creating the template of the response JSON
 	$data = array(
 		'steamid64' => null,
+		'steamid64_str' => null,
 		'nickname' => null,
 		'role' => null,
 		'last_online' => null,
@@ -274,9 +280,11 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 	// Get SteamID64
 	preg_match("/(\d+)/", $html->find(".sidebar__shortcut-inner-wrap a[href*='steamcommunity.com']", 0)->href, $steam_id);
 	$data['steamid64'] = intval($steam_id[1]);
+	$data['steamid64_str'] = $steam_id[1];
 
 	if (isset($filters) && in_array('steamid64', $filters)) {
 		$filtered_data['steamid64'] = $data['steamid64'];
+		$filtered_data['steamid64_str'] = $data['steamid64_str'];
 	}
 
 	unset($steam_id);
@@ -478,11 +486,11 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 	if ($bfilters) {
 		return $response->withHeader('Access-Control-Allow-Origin', '*')
 		->withHeader('Content-type', 'application/json')
-		->withJson($filtered_data, 200, JSON_PRETTY_PRINT);
+		->withJson($filtered_data, 200);
 	} else {
 		return $response->withHeader('Access-Control-Allow-Origin', '*')
 		->withHeader('Content-type', 'application/json')
-		->withJson($data, 200, JSON_PRETTY_PRINT);
+		->withJson($data, 200);
 	}
 });
 ?>
