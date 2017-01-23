@@ -19,7 +19,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 		"errors" => array(
 			"code" => 0,
 			"message" => "Required id argument missing or invalid"
-		)), 400, JSON_PRETTY_PRINT);
+		)), 400);
 	}
 
 	// Get the PHPSESSID cookie if given (unavailable for now)
@@ -32,7 +32,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 			->withJson(array("errors" => array(
 				"code" => 1,
 				"message" => "Optional sgsid argument invalid"
-			)), 400, JSON_PRETTY_PRINT);
+			)), 400);
 		}
 	}
 
@@ -75,7 +75,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 				'user' => $iusers_row['nickname'],
 				'reason' => $giveaway_row['deleted_reason'],
 				'deleted_time' => $giveaway_row['deleted_time']
-			)), 500, JSON_PRETTY_PRINT);
+			)), 500);
 		} elseif ($giveaway_row['not_region'] === 1) {
 			return $response->withHeader('Access-Control-Allow-Origin', '*')
 			->withHeader('Content-type', 'application/json')
@@ -84,7 +84,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 				'description' => 'Not in the proper region',
 				'id' => $giv_id,
 				'region' => $giveaway_row['region']
-			)), 500, JSON_PRETTY_PRINT);
+			)), 500);
 		} elseif ($giveaway_row['not_wl_groups'] === 1) {
 			return $response->withHeader('Access-Control-Allow-Origin', '*')
 			->withHeader('Content-type', 'application/json')
@@ -92,7 +92,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 				'code' => 3,
 				'description' => 'Not in the whitelist and/or required groups',
 				'id' => $giv_id
-			)), 500, JSON_PRETTY_PRINT);
+			)), 500);
 		} elseif ($giveaway_row['not_whitelisted'] === 1) {
 			return $response->withHeader('Access-Control-Allow-Origin', '*')
 			->withHeader('Content-type', 'application/json')
@@ -100,7 +100,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 				'code' => 4,
 				'description' => 'Not in the whitelist',
 				'id' => $giv_id
-			)), 500, JSON_PRETTY_PRINT);
+			)), 500);
 		} elseif ($giveaway_row['not_groups'] === 1) {
 			return $response->withHeader('Access-Control-Allow-Origin', '*')
 			->withHeader('Content-type', 'application/json')
@@ -108,7 +108,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 				'code' => 5,
 				'description' => 'Not in the required groups',
 				'id' => $giv_id
-			)), 500, JSON_PRETTY_PRINT);
+			)), 500);
 		} else {
 			$stmt = $db->query("SELECT nickname FROM IUsers WHERE id=" . $giveaway_row['iusers_id']);
 
@@ -149,7 +149,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 
 			return $response->withHeader('Access-Control-Allow-Origin', '*')
 			->withHeader('Content-type', 'application/json')
-			->withJson($data, 200, JSON_PRETTY_PRINT);
+			->withJson($data, 200);
 		}
 
 	} elseif ($giveaway_row['count'] === 1 && $giveaway_row['unavailable'] === 1 && (time() - $giveaway_row['last_checked']) <= MAX_TIME_GIVEAWAY_CACHE) {
@@ -159,7 +159,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 		'errors' => array(
 			'code' => 0,
 			'description' => 'There was some error with the request to SG or the giveaway doesn\'t exist'
-		)), 500, JSON_PRETTY_PRINT);
+		)), 500);
 
 	} elseif ($giveaway_row['count'] === 1 && $giveaway_row['ended'] === 1 && (time() - $giveaway_row['last_checked']) <= MAX_TIME_ENDED_GIVEAWAY_CACHE) {
 		$stmt = $db->query("SELECT nickname FROM IUsers WHERE id=" . $giveaway_row['iusers_id']);
@@ -201,7 +201,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 
 		return $response->withHeader('Access-Control-Allow-Origin', '*')
 		->withHeader('Content-type', 'application/json')
-		->withJson($data, 200, JSON_PRETTY_PRINT);
+		->withJson($data, 200);
 
 	} elseif ($giveaway_row['count'] === 1 && $giveaway_row['ended'] === 1 && (time() - $giveaway_row['last_checked']) >= MAX_TIME_ENDED_GIVEAWAY_CACHE) {
 		if ($giveaway_row['blacklisted'] === 1) {
@@ -246,7 +246,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 		'errors' => array(
 			'code' => 0,
 			'description' => 'There was some error with the request to SG or the giveaway doesn\'t exist'
-		)), 500, JSON_PRETTY_PRINT);
+		)), 500);
 	}
 
 
@@ -346,7 +346,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 					'description' => 'Not in the proper region',
 					'id' => $giv_id,
 					'region' => $region
-				)), 500, JSON_PRETTY_PRINT);
+				)), 500);
 
 			} elseif (strpos($message, "whitelist, or the required Steam groups") !== false) {
 				//echo "1 If, 1 If, 1 ElseIf.";
@@ -380,7 +380,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 					'code' => 3,
 					'description' => 'Not in the whitelist and/or required groups',
 					'id' => $giv_id
-				)), 500, JSON_PRETTY_PRINT);
+				)), 500);
 
 			} elseif (strpos($message, "whitelist") !== false) {
 				//echo "1 If, 1 If, 2 ElseIf.";
@@ -414,7 +414,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 					'code' => 4,
 					'description' => 'Not in the whitelist',
 					'id' => $giv_id
-				)), 500, JSON_PRETTY_PRINT);
+				)), 500);
 
 			} elseif (strpos($message, "Steam groups") !== false) {
 				//echo "1 If, 1 If, 3 ElseIf.";
@@ -446,7 +446,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 					'code' => 5,
 					'description' => 'Not in the required groups',
 					'id' => $giv_id
-				)), 500, JSON_PRETTY_PRINT);
+				)), 500);
 			}
 
 
@@ -541,7 +541,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 				'user' => $user,
 				'reason' => $deleted_reason,
 				'deleted_time' => $deleted_time
-			)), 500, JSON_PRETTY_PRINT);
+			)), 500);
 		}
 	}
 
@@ -784,7 +784,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 			if ($api_request === false) {
 				return $response->withHeader('Access-Control-Allow-Origin', '*')
 				->withHeader('Content-type', 'application/json')
-				->withJson(json_decode($api_request, true), 500, JSON_PRETTY_PRINT);
+				->withJson(json_decode($api_request, true), 500);
 			}
 
 			//var_dump($api_request);
@@ -889,6 +889,6 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 
 	return $response->withHeader('Access-Control-Allow-Origin', '*')
 	->withHeader('Content-type', 'application/json')
-	->withJson($data, 200, JSON_PRETTY_PRINT);
+	->withJson($data, 200);
 });
 ?>

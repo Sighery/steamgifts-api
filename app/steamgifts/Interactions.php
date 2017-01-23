@@ -20,7 +20,7 @@ $app->get('/SteamGifts/Interactions/GetGameTitle/', function($request, $response
 		"errors" => array(
 			"code" => 0,
 			"description" => "Missing or invalid id argument"
-		)), 400, JSON_PRETTY_PRINT);
+		)), 400);
 	}
 
 	// Lists of valid type values
@@ -37,7 +37,7 @@ $app->get('/SteamGifts/Interactions/GetGameTitle/', function($request, $response
 		"errors" => array(
 			"code" => 1,
 			"description" => "Missing or invalid type argument"
-		)), 400, JSON_PRETTY_PRINT);
+		)), 400);
 	}
 
 	// Retrieve the local data of the game title if it exists
@@ -86,7 +86,7 @@ $app->get('/SteamGifts/Interactions/GetGameTitle/', function($request, $response
 			"errors" => array(
 				"code" => 0,
 				"description" => "Steam is most likely down"
-			)), 500, JSON_PRETTY_PRINT);
+			)), 500);
 		}
 
 		$json = json_decode($json, true);
@@ -120,7 +120,7 @@ $app->get('/SteamGifts/Interactions/GetGameTitle/', function($request, $response
 				"code" => 1,
 				"description" => "Game inexistant or not available in the server's region",
 				"game_title" => $gametitles_row['game_title']
-			)), 500, JSON_PRETTY_PRINT);
+			)), 500);
 		}
 
 		// At this point the Steam API response was successful
@@ -188,7 +188,7 @@ $app->get('/SteamGifts/Interactions/GetGameTitle/', function($request, $response
 				"code" => 1,
 				"description" => "Game inexistant or not available in the server's region",
 				"game_title" => $gametitles_row['game_title']
-			)), 500, JSON_PRETTY_PRINT);
+			)), 500);
 		}
 
 		$data['id'] = $gametitles_row['id'];
@@ -197,7 +197,7 @@ $app->get('/SteamGifts/Interactions/GetGameTitle/', function($request, $response
 
 	return $response->withHeader('Access-Control-Allow-Origin', '*')
 	->withHeader('Content-type', 'application/json')
-	->withJson($data, 200, JSON_PRETTY_PRINT);
+	->withJson($data, 200);
 });
 
 $app->get('/SteamGifts/Interactions/IsFree/', function($request, $response) {
@@ -220,7 +220,7 @@ $app->get('/SteamGifts/Interactions/IsFree/', function($request, $response) {
 		"errors" => array(
 			"code" => 0,
 			"description" => "Missing or invalid id argument"
-		)), 400, JSON_PRETTY_PRINT);
+		)), 400);
 	}
 
 	// Lists of valid type values
@@ -237,7 +237,7 @@ $app->get('/SteamGifts/Interactions/IsFree/', function($request, $response) {
 		"errors" => array(
 			"code" => 1,
 			"description" => "Missing or invalid type argument"
-		)), 400, JSON_PRETTY_PRINT);
+		)), 400);
 	}
 
 	// Retrieve the local data of the game title if it exists
@@ -280,7 +280,7 @@ $app->get('/SteamGifts/Interactions/IsFree/', function($request, $response) {
 			"errors" => array(
 				"code" => 0,
 				"description" => "Steam is most likely down"
-			)), 500, JSON_PRETTY_PRINT);
+			)), 500);
 		}
 
 		$json = json_decode($json, true);
@@ -317,7 +317,7 @@ $app->get('/SteamGifts/Interactions/IsFree/', function($request, $response) {
 					"code" => 1,
 					"description" => "Game inexistant or not available in the server's region",
 					"game_title" => null
-				)), 500, JSON_PRETTY_PRINT);
+				)), 500);
 			} else {
 				$brecord_title = true;
 			}
@@ -386,7 +386,7 @@ $app->get('/SteamGifts/Interactions/IsFree/', function($request, $response) {
 				"code" => 1,
 				"description" => "Game inexistant or not available in the server's region",
 				"game_title" => $gametitles_row['game_title']
-			)), 500, JSON_PRETTY_PRINT);
+			)), 500);
 		}
 		$title = $gametitles_row['game_title'];
 	}
@@ -441,7 +441,7 @@ $app->get('/SteamGifts/Interactions/IsFree/', function($request, $response) {
 			"errors" => array(
 				"code" => 2,
 				"description" => "There was an error with the request to SG"
-			)), 500, JSON_PRETTY_PRINT);
+			)), 500);
 		}
 
 		unset($sg_post_data);
@@ -525,7 +525,7 @@ $app->get('/SteamGifts/Interactions/IsFree/', function($request, $response) {
 	// We finally return $data with a 200 code
 	return $response->withHeader('Access-Control-Allow-Origin', '*')
 	->withHeader('Content-type', 'application/json')
-	->withJson($data, 200, JSON_PRETTY_PRINT);
+	->withJson($data, 200);
 });
 
 
@@ -543,7 +543,7 @@ $app->get('/SteamGifts/Interactions/GetMessagesCount/', function($request, $resp
 		"errors" => array(
 			"code" => 1,
 			"description" => "Cg most likely won't allow me to ask for your PHPSESSID cookie, so this method is restricted to just my personal use for now"
-		)), 400, JSON_PRETTY_PRINT);
+		)), 400);
 	}
 
 	// All from here would be the proper code to get this info using your own
@@ -558,7 +558,7 @@ $app->get('/SteamGifts/Interactions/GetMessagesCount/', function($request, $resp
 			"errors" => array(
 				"code" => 0,
 				"description" => "There was an error with the request to SG"
-			)), 500, JSON_PRETTY_PRINT);
+			)), 500);
 		}
 
 	} else {
@@ -567,7 +567,7 @@ $app->get('/SteamGifts/Interactions/GetMessagesCount/', function($request, $resp
 		"errors" => array(
 			"code" => 0,
 			"description" => "Required phpsessid argument missing or invalid"
-		)), 400, JSON_PRETTY_PRINT);
+		)), 400);
 	}
 
 	$data = array(
@@ -591,6 +591,6 @@ $app->get('/SteamGifts/Interactions/GetMessagesCount/', function($request, $resp
 
 	return $response->withHeader('Access-Control-Allow-Origin', '*')
 	->withHeader('Content-type', 'application/json')
-	->withJson($data);
+	->withJson($data, 200);
 });
 ?>
