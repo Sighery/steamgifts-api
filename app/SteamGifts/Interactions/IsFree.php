@@ -61,10 +61,10 @@ $app->get('/SteamGifts/Interactions/IsFree/', function($request, $response) {
 		$json;
 
 		if ($type === 0) {
-			$json = APIRequests::get_generic_request("http://store.steampowered.com/api/appdetails?appids=" . $id . "&filters=basic");
+			$json = APIRequests::generic_get_request("http://store.steampowered.com/api/appdetails?appids=" . $id . "&filters=basic");
 
 		} else {
-			$json = APIRequests::get_generic_request("http://store.steampowered.com/api/packagedetails/?packageids=" . $id);
+			$json = APIRequests::generic_get_request("http://store.steampowered.com/api/packagedetails/?packageids=" . $id);
 		}
 
 		if ($json->status_code !== 200) {

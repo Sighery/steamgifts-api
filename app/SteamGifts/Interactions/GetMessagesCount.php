@@ -22,9 +22,9 @@ $app->get('/SteamGifts/Interactions/GetMessagesCount/', function($request, $resp
 	// PHPSESSID cookie
 	$key = $request->getQueryParam("sgsid");
 	if (isset($key) && preg_match("/^[A-Za-z0-9]+$/", $key) === 1) {
-		$page_req = get_sg_page("https://www.steamgifts.com/about/brand-assets", $key);
+		$page_req = APIRequests::sg_generic_get_request("https://www.steamgifts.com/about/brand-assets", false, $key);
 
-		if ($page_req === false) {
+		if ($page_req->status_code !== 200) {
 			return $response->withHeader('Access-Control-Allow-Origin', '*')
 			->withHeader('Content-type', 'application/json')->withJson(array(
 			"errors" => array(
@@ -46,7 +46,7 @@ $app->get('/SteamGifts/Interactions/GetMessagesCount/', function($request, $resp
 		"count" => null
 	);
 
-	$html = str_get_html($page_req);
+	$html = str_get_html($page_req->body);
 
 
 	$possible_count = $html->find("a[href='/messages']", 0)->lastChild();

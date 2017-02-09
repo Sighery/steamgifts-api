@@ -324,7 +324,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 			$message = $response_rows[1]->children(0)->children(1)->plaintext;
 
 			if (strpos($message, "blacklisted") !== false) {
-				$page_req = APIRequests::get('https://www.steamgifts.com/giveaway/' . $giv_id .'/', true, false);
+				$page_req = APIRequests::sg_generic_get_request('https://www.steamgifts.com/giveaway/' . $giv_id .'/', true, false);
 				$html = str_get_html($page_req->body);
 				$title = $html->find('.page__heading__breadcrumbs', 0);
 
