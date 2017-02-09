@@ -39,6 +39,7 @@
 <p>The response is a JSON containing either all the info or the filters you passed in. They keys that appear on the JSON response are:</p>
 <ul>
 	<li class="keys-list"><b>steamid64</b>: Integer. Contains the steamID64 of the asked user.</li>
+	<li class="keys-list"><b>steamid64_str</b>: String. Contains the steamID64 of the asked user as a string.</li>
 	<li class="keys-list"><b>nickname</b>: String. Contains the nickname of the asked user.</li>
 	<li class="keys-list"><b>role</b>: Integer. Contains the role of the asked user. Check <a class="generic-link" href="https://github.com/Sighery/steamgifts-api/blob/master/translations/roles.json" target="_blank">the translation dictionary for roles</a> on the repository to know what each number means.</li>
 	<li class="keys-list"><b>last_online</b>: Integer. Contains the Unix timestamp of when the user was last online. If user was online when the last check took place the number will be 0.</li>
@@ -76,7 +77,8 @@
 	</ul>
 	<li><p><b>Status code 500</b>: Usually caused by some error on the request to SteamGifts. Can be caused by it being down as well.</p></li>
 	<ul>
-		<li class="keys-list"><b>Code 0</b>: The user either doesn't exist, or there was an error with the request to SG, it could be down.</li>
+		<li class="keys-list"><b>Code 0</b>: There was an error with the request to SG, it could be down.</li>
+		<li class="keys-list"><b>Code 1</b>: The asked user doesn't exist.</li>
 	</ul>
 </ol>
 <p class="example-error-response">The error response JSON will always have the following structure, however, it might include other keys on top of the <code>code</code> and <code>description</code> keys, check each specific HTML response status code and specific code to know if they include more keys.</p>

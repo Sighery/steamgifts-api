@@ -109,7 +109,7 @@
 		<li class="keys-list"><b>Code 0</b>: The <code>id</code> argument is invalid, contains non numeric characters.</li>
 		<li class="keys-list"><b>Code 1</b>: The <code>type</code> argument is invalid, contains non numeric characters.</li>
 	</ul>
-	<li><p><b>Status code 500</b>: Usually caused by some error on the request to Steam. Can be caused by it being down as well.</p></li>
+	<li><p><b>Status code 500</b>: Usually caused by some error on the request to Steam and/or SteamGifts. Can be caused by it being down as well.</p></li>
 	<ul>
 		<li class="keys-list"><b>Code 0</b>: The request to Steam wasn't successful, most likely down.</li>
 		<li class="keys-list"><b>Code 1</b>: The given ID and type combination either doesn't exist or isn't available on the server's region. This error response has another key named <code>game_title</code> which might or might not be <code>null</code>: it will be <code>null</code> if the given game never existed, or the string of the title if it existed at some point, and the title was recorded but it's not available anymore.</li>
@@ -161,7 +161,7 @@
 		<li class="keys-list"><b>Code 0</b>: The <code>sgsid</code> argument is either missing or invalid.</li>
 		<li class="keys-list"><b>Code 1</b>: The <code>allowed</code> argument is invalid, meaning it's not the password needed to be able to use this method.</li>
 	</ul>
-	<li><p><b>Status code 500</b>: Usually caused by some error on the request to Steam. Can be caused by it being down as well.</p></li>
+	<li><p><b>Status code 500</b>: Usually caused by some error on the request to SteamGifts. Can be caused by it being down as well.</p></li>
 	<ul>
 		<li class="keys-list"><b>Code 0</b>: The request to SteamGifts wasn't successful, most likely down or an invalid PHPSESSID cookie.</li>
 	</ul>
