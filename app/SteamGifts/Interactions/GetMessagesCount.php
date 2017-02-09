@@ -1,6 +1,5 @@
 <?php
 require_once(__DIR__ . '/../utils/utilities.php');
-require_once(__DIR__ . '/../utils/dbconn.php');
 
 $app->get('/SteamGifts/Interactions/GetMessagesCount/', function($request, $response) {
 	/** This endpoint and method will stay private and protected for now
