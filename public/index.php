@@ -8,8 +8,15 @@ require '../../libraries/simple_html_dom.php';
 
 $app = new \Slim\App;
 
-include_once("../app/steamgifts/IUsers.php");
-include_once("../app/steamgifts/IGiveaways.php");
-include_once("../app/steamgifts/Interactions.php");
+// IGiveaways endpoint methods
+include_once(__DIR__ . '/../app/SteamGifts/IGiveaways/GetGivInfo.php');
+
+// IUsers endpoint methods
+include_once(__DIR__ . '/../app/SteamGifts/IUsers/GetUserInfo.php');
+
+// Interactions endpoint methods
+include_once(__DIR__ . '/../app/SteamGifts/Interactions/GetGameTitle.php');
+include_once(__DIR__ . '/../app/SteamGifts/Interactions/IsFree.php');
+include_once(__DIR__ . '/../app/SteamGifts/Interactions/GetMessagesCount.php');
 
 $app->run();
