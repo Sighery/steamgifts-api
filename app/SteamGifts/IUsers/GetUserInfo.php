@@ -1,6 +1,6 @@
 <?php
-require_once('utilities.php');
-require_once('dbconn.php');
+require_once(__DIR__ . '/../utils/utilities.php');
+require_once(__DIR__ . '/../utils/dbconn.php');
 
 $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 	// Define the constant for the max difference of time for cached data
@@ -111,7 +111,6 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 				$filters_string .= ", " . $filters[$i];
 			}
 		}
-		//echo $filters_string;
 
 		if ($bid) {
 			$stmt = $db->query("SELECT COUNT(*) AS count, " . $filters_string . ", unavailable, steamid64 as steamid64private, UNIX_TIMESTAMP(last_checked) AS last_checked FROM IUsers WHERE steamid64=" . $id);
@@ -124,11 +123,8 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 	} else {
 		if ($bid) {
 			$stmt = $db->query("SELECT COUNT(*) AS count, steamid64, nickname, role, last_online, registered, comments, gibs_entered, gifts_won, gifts_won_value, gifts_sent, gifts_sent_value, gifts_awaiting_feedback, gifts_not_sent, contributor_level, suspension_type, suspension_end_time, unavailable, UNIX_TIMESTAMP(last_checked) AS last_checked FROM IUsers WHERE steamid64=" . $id);
-			//echo "SELECT COUNT(*) AS count, steamid64, nickname, role, last_online, registered, comments, gibs_entered, gifts_won, gifts_won_value, gifts_sent, gifts_sent_value, gifts_awaiting_feedback, gifts_not_sent, contributor_level, suspension_type, suspension_end_time, unavailable, UNIX_TIMESTAMP(last_checked) AS last_checked FROM IUsers WHERE steamid64=" . $id . "\n";
-
 		} else {
 			$stmt = $db->query("SELECT COUNT(*) AS count, steamid64, nickname, role, last_online, registered, comments, gibs_entered, gifts_won, gifts_won_value, gifts_sent, gifts_sent_value, gifts_awaiting_feedback, gifts_not_sent, contributor_level, suspension_type, suspension_end_time, unavailable, UNIX_TIMESTAMP(last_checked) AS last_checked FROM IUsers WHERE nickname='" . $user . "'");
-			//echo "SELECT COUNT(*) AS count, steamid64, nickname, role, last_online, registered, comments, gibs_entered, gifts_won, gifts_won_value, gifts_sent, gifts_sent_value, gifts_awaiting_feedback, gifts_not_sent, contributor_level, suspension_type, suspension_end_time, unavailable, UNIX_TIMESTAMP(last_checked) AS last_checked FROM IUsers WHERE nickname='" . $user . "'\n";
 		}
 	}
 
@@ -139,7 +135,6 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 	//we ask SG for the profile instead
 	$row = $stmt->fetch(PDO::FETCH_ASSOC);
 	if ($row['count'] === 1 && isset($row['steamid64private']) && $row['unavailable'] === 0 && (time() - $row['last_checked']) <= MAX_TIME_PROFILE_CACHE) {
-		//echo "If row count == 1\n";
 		if ($bfilters) {
 			$filtered_data = $row;
 			if (array_key_exists("steamid64", $row)) {
@@ -161,7 +156,6 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 				);
 			}
 
-			//echo "If row count == 1, bfilters true\n";
 			return $response->withHeader('Access-Control-Allow-Origin', '*')
 			->withHeader('Content-type', 'application/json')
 			->withJson($filtered_data, 200);
@@ -180,7 +174,6 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 				'end_time' => $row['suspension_end_time']
 			);
 
-			//echo "If row count == 1, bfilters false\n";
 			return $response->withHeader('Access-Control-Allow-Origin', '*')
 			->withHeader('Content-type', 'application/json')
 			->withJson($data, 200);
@@ -191,33 +184,38 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 		->withHeader('Content-type', 'application/json')
 		->withJson(array(
 		'errors' => array(
-			'code' => 0,
-			'description' => 'There was some error with the request to SG or the user doesn\'t exist'
+			'code' => 1,
+			'description' => 'The user doesn\'t exist'
 		)), 500);
 	} else {
-		//echo "Else, requesting page\n";
 		// If count happened to be 0 or outdated data, we then request the page
 		if ($bid) {
-			$page_req = get_sg_page("https://www.steamgifts.com/go/user/" . $id);
+			$page_req = APIRequests::sg_generic_get_request("https://www.steamgifts.com/go/user/" . $id, true);
 		} else {
-			$page_req = get_sg_page("https://www.steamgifts.com/user/" . $user);
+			$page_req = APIRequests::sg_generic_get_request("https://www.steamgifts.com/user/" . $user);
 		}
 	}
 
 	unset($stmt);
 
+
 	// Check the $page_req was valid, and stop the execution if not
-	if ($page_req === false) {
-		//echo "False";
-		//echo "\n";
+	if ($page_req->status_code !== 200 && $page_req->status_code !== 301) {
+		// SG is down, don't store it and just wait until it's back up.
+		return $response->withHeader('Access-Control-Allow-Origin', '*')
+		->withHeader('Content-type', 'application/json')
+		->withJson(array(
+		'errors' => array(
+			'code' => 0,
+			'description' => 'The request to SG was unsuccessful'
+		)), 500);
+
+	} else if ($page_req->url === "https://www.steamgifts.com/" || $page_req->status_code === 301) {
+		// User doesn't exist, store it and wait until the next check.
 		if ($bid) {
-			//echo "1";
-			//echo "\n";
 			if ($row['count'] === 1) {
-				//echo "1 1\n";
 				$stmt = $db->prepare("UPDATE IUsers SET unavailable=:unavailable, last_checked=NULL WHERE steamid64=:steamid64");
 			} else {
-				//echo "1 2\n";
 				$stmt = $db->prepare("INSERT INTO IUsers (unavailable, steamid64) VALUES (:unavailable, :steamid64)");
 			}
 			$stmt->execute(array(
@@ -225,12 +223,9 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 				':steamid64' => $id
 			));
 		} else {
-			//echo "2\n";
 			if ($row['count'] === 1) {
-				//echo "2 1\n";
 				$stmt = $db->prepare("UPDATE IUsers SET unavailable=:unavailable, last_checked=NULL WHERE nickname=:nickname");
 			} else {
-				//echo "2 2\n";
 				$stmt = $db->prepare("INSERT INTO IUsers (unavailable, nickname) VALUES (:unavailable, :nickname)");
 			}
 			$stmt->execute(array(
@@ -243,13 +238,13 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 		->withHeader('Content-type', 'application/json')
 		->withJson(array(
 		'errors' => array(
-			'code' => 0,
-			'description' => 'There was some error with the request to SG or the user doesn\'t exist'
+			'code' => 1,
+			'description' => 'The user doesn\'t exist'
 		)), 500);
 	}
 
 	// Parsing the html file
-	$html = str_get_html($page_req);
+	$html = str_get_html($page_req->body);
 
 	// Creating the template of the response JSON
 	$data = array(
@@ -450,15 +445,12 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 	}
 
 	if ($row['count'] === 0 && $nickname_row['count'] === 0) {
-		//echo "Inserting info\n";
 		$sql_string = "INSERT INTO IUsers (steamid64, nickname, role, last_online, registered, comments, gibs_entered, gifts_won, gifts_won_value, gifts_sent, gifts_sent_value, gifts_awaiting_feedback, gifts_not_sent, contributor_level, suspension_type, suspension_end_time, unavailable) VALUES (:steamid64, :nickname, :role, :last_online, :registered, :comments, :gibs_entered, :gifts_won, :gifts_won_value, :gifts_sent, :gifts_sent_value, :gifts_awaiting_feedback, :gifts_not_sent, :contributor_level, :suspension_type, :suspension_end_time, 0)";
 
 	} elseif ($row['count'] === 0 && $nickname_row['count'] === 1) {
-		//echo "Updating info missing steamid64\n";
 		$sql_string = "UPDATE IUsers SET steamid64=:steamid64, nickname=:nickname, role=:role, last_online=:last_online, registered=:registered, comments=:comments, gibs_entered=:gibs_entered, gifts_won=:gifts_won, gifts_won_value=:gifts_won_value, gifts_sent=:gifts_sent, gifts_sent_value=:gifts_sent_value, gifts_awaiting_feedback=:gifts_awaiting_feedback, gifts_not_sent=:gifts_not_sent, contributor_level=:contributor_level, suspension_type=:suspension_type, suspension_end_time=:suspension_end_time, unavailable=0, last_checked=NULL WHERE id=" . $nickname_row['id'];
 
 	} else {
-		//echo "Updating info\n";
 		$sql_string = "UPDATE IUsers SET steamid64=:steamid64, nickname=:nickname, role=:role, last_online=:last_online, registered=:registered, comments=:comments, gibs_entered=:gibs_entered, gifts_won=:gifts_won, gifts_won_value=:gifts_won_value, gifts_sent=:gifts_sent, gifts_sent_value=:gifts_sent_value, gifts_awaiting_feedback=:gifts_awaiting_feedback, gifts_not_sent=:gifts_not_sent, contributor_level=:contributor_level, suspension_type=:suspension_type, suspension_end_time=:suspension_end_time, unavailable=0, last_checked=NULL WHERE steamid64=" . $data['steamid64'] . " OR nickname='" . $data['nickname'] . "'";
 	}
 
