@@ -51,7 +51,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 	);
 
 	// Get local data if any
-	$stmt = $db->prepare("SELECT COUNT(*) AS count, id, ended, deleted, deleted_reason, deleted_time, blacklisted, not_whitelisted, not_region, region, not_groups, not_wl_groups, iusers_id, giv_type, level, copies, points, gametitles_id, not_steam_game, created_time, starting_time, ending_time, comments, entries, description, unavailable, UNIX_TIMESTAMP(last_checked) AS last_checked FROM IGiveaways WHERE giv_id=:giv_id");
+	$stmt = $db->prepare("SELECT COUNT(*) AS count, id, ended, deleted, deleted_reason, deleted_time, blacklisted, not_whitelisted, not_region, region, not_groups, not_wl_groups, usersgeneral_id, giv_type, level, copies, points, gamesinfo_id, not_steam_game, created_time, starting_time, ending_time, comments, entries, unavailable, UNIX_TIMESTAMP(last_checked) AS last_checked FROM GiveawaysGeneral WHERE giv_id=:giv_id");
 	$stmt->execute(array(
 		':giv_id' => $giv_id
 	));
@@ -59,12 +59,37 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 	$giveaway_row = $stmt->fetch(PDO::FETCH_ASSOC);
 	unset($stmt);
 
-	if ($giveaway_row['count'] === 1 && $giveaway_row['unavailable'] === 0 && $giveaway_row['ended'] === 0 && (time() - $giveaway_row['last_checked']) <= MAX_TIME_GIVEAWAY_CACHE) {
-		// Data is in the DB. It's not outdated, and not unvailable.
-		if ($giveaway_row['deleted'] === 1) {
-			$stmt = $db->query("SELECT nickname FROM IUsers WHERE id=" . $giveaway_row['iusers_id']);
 
-			$iusers_row = $stmt->fetch(PDO::FETCH_ASSOC);
+	//Get description data if any
+	if ($giveaway_row['count'] === 1) {
+		$stmt = $db->prepare("SELECT COUNT(*) AS count, description, UNIX_TIMESTAMP(last_checked) AS last_checked FROM GiveawaysComments WHERE giveawaysgeneral_id=:giveawaysgeneral_id");
+		$stmt->execute(array(
+			':giveawaysgeneral_id' => $giveaway_row['id']
+		));
+
+		$description_row = $stmt->fetch(PDO::FETCH_ASSOC);
+		unset($stmt);
+	} else {
+		$description_row = array(
+			'count' => 0
+		);
+	}
+
+	/*
+	//TODO: FIGURE THIS OUT
+	if ($giveaway_row['ended'] === null) {
+		// Row was created by a method like GetGivWinners but it just contains
+		//the ID of the giveaway and nothing else
+		$page_req = APIRequests::sg_generic_get_request('https://www.steamgifts.com/giveaway/' . $giv_id . '/', true);
+	}
+	*/
+
+	if ($giveaway_row['count'] === 1 && $description_row['count'] === 1 && $giveaway_row['unavailable'] === 0 && $giveaway_row['ended'] === 0 && (time() - $giveaway_row['last_checked']) <= MAX_TIME_GIVEAWAY_CACHE) {
+		// Data is in the DB. It's not outdated, and not unavailable.
+		if ($giveaway_row['deleted'] === 1) {
+			$stmt = $db->query("SELECT nickname FROM UsersGeneral WHERE id=" . $giveaway_row['usersgeneral_id']);
+
+			$usersgeneral_row = $stmt->fetch(PDO::FETCH_ASSOC);
 			unset($stmt);
 
 			return $response->withHeader('Access-Control-Allow-Origin', '*')
@@ -73,7 +98,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 				'code' => 3,
 				'description' => 'Giveaway deleted',
 				'id' => $giv_id,
-				'user' => $iusers_row['nickname'],
+				'user' => $usersgeneral_row['nickname'],
 				'reason' => $giveaway_row['deleted_reason'],
 				'deleted_time' => $giveaway_row['deleted_time']
 			)), 500);
@@ -152,15 +177,15 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 				)), 500);
 			}
 		} else {
-			$stmt = $db->query("SELECT nickname FROM IUsers WHERE id=" . $giveaway_row['iusers_id']);
+			$stmt = $db->query("SELECT nickname FROM UsersGeneral WHERE id=" . $giveaway_row['usersgeneral_id']);
 
-			$iusers_row = $stmt->fetch(PDO::FETCH_ASSOC);
+			$usersgeneral_row = $stmt->fetch(PDO::FETCH_ASSOC);
 			unset($stmt);
 
 			$data = array(
 				'id' => $giv_id,
 				'ended' => (bool)$giveaway_row['ended'],
-				'user' => $iusers_row['nickname'],
+				'user' => $usersgeneral_row['nickname'],
 				'type' => $giveaway_row['giv_type'],
 				'region' => $giveaway_row['region'],
 				'level' => $giveaway_row['level'],
@@ -171,7 +196,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 				'created_time' => $giveaway_row['created_time'],
 				'starting_time' => $giveaway_row['starting_time'],
 				'ending_time' => $giveaway_row['ending_time'],
-				'description' => $giveaway_row['description'],
+				'description' => $description_row['description'],
 				'game_id' => null,
 				'game_type' => null,
 				'game_title' => null
@@ -180,13 +205,13 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 			if (isset($giveaway_row['not_steam_game'])) {
 				$data['game_title'] = $giveaway_row['not_steam_game'];
 			} else {
-				$stmt = $db->query("SELECT game_id, game_type, game_title FROM GameTitles WHERE id=" . $giveaway_row['gametitles_id']);
-				$gametitles_row = $stmt->fetch(PDO::FETCH_ASSOC);
+				$stmt = $db->query("SELECT game_id, game_type, game_title FROM GamesInfo WHERE id=" . $giveaway_row['gamesinfo_id']);
+				$gamesinfo_row = $stmt->fetch(PDO::FETCH_ASSOC);
 				unset($stmt);
 
-				$data['game_id'] = $gametitles_row['game_id'];
-				$data['game_type'] = $gametitles_row['game_type'];
-				$data['game_title'] = $gametitles_row['game_title'];
+				$data['game_id'] = $gamesinfo_row['game_id'];
+				$data['game_type'] = $gamesinfo_row['game_type'];
+				$data['game_title'] = $gamesinfo_row['game_title'];
 			}
 
 			return $response->withHeader('Access-Control-Allow-Origin', '*')
@@ -204,17 +229,17 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 			'description' => 'The giveaway doesn\'t exist'
 		)), 500);
 
-	} elseif ($giveaway_row['count'] === 1 && $giveaway_row['ended'] === 1 && (time() - $giveaway_row['last_checked']) <= MAX_TIME_ENDED_GIVEAWAY_CACHE) {
+	} elseif ($giveaway_row['count'] === 1 && $description_row['count'] === 1 && $giveaway_row['ended'] === 1 && (time() - $giveaway_row['last_checked']) <= MAX_TIME_ENDED_GIVEAWAY_CACHE) {
 		// Data was in the DB. Giveaway ended but it isn't outdated.
-		$stmt = $db->query("SELECT nickname FROM IUsers WHERE id=" . $giveaway_row['iusers_id']);
+		$stmt = $db->query("SELECT nickname FROM UsersGeneral WHERE id=" . $giveaway_row['usersgeneral_id']);
 
-		$iusers_row = $stmt->fetch(PDO::FETCH_ASSOC);
+		$usersgeneral_row = $stmt->fetch(PDO::FETCH_ASSOC);
 		unset($stmt);
 
 		$data = array(
 			'id' => $giv_id,
 			'ended' => (bool)$giveaway_row['ended'],
-			'user' => $iusers_row['nickname'],
+			'user' => $usersgeneral_row['nickname'],
 			'type' => $giveaway_row['giv_type'],
 			'region' => $giveaway_row['region'],
 			'level' => $giveaway_row['level'],
@@ -225,7 +250,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 			'created_time' => $giveaway_row['created_time'],
 			'starting_time' => $giveaway_row['starting_time'],
 			'ending_time' => $giveaway_row['ending_time'],
-			'description' => $giveaway_row['description'],
+			'description' => $description_row['description'],
 			'game_id' => null,
 			'game_type' => null,
 			'game_title' => null
@@ -234,13 +259,13 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 		if (isset($giveaway_row['not_steam_game'])) {
 			$data['game_title'] = $giveaway_row['not_steam_game'];
 		} else {
-			$stmt = $db->query("SELECT game_id, game_type, game_title FROM GameTitles WHERE id=" . $giveaway_row['gametitles_id']);
-			$gametitles_row = $stmt->fetch(PDO::FETCH_ASSOC);
+			$stmt = $db->query("SELECT game_id, game_type, game_title FROM GamesInfo WHERE id=" . $giveaway_row['gamesinfo_id']);
+			$gamesinfo_row = $stmt->fetch(PDO::FETCH_ASSOC);
 			unset($stmt);
 
-			$data['game_id'] = $gametitles_row['game_id'];
-			$data['game_type'] = $gametitles_row['game_type'];
-			$data['game_title'] = $gametitles_row['game_title'];
+			$data['game_id'] = $gamesinfo_row['game_id'];
+			$data['game_type'] = $gamesinfo_row['game_type'];
+			$data['game_title'] = $gamesinfo_row['game_title'];
 		}
 
 		return $response->withHeader('Access-Control-Allow-Origin', '*')
@@ -285,15 +310,25 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 		)), 500);
 	} else if ($page_req->url === "https://www.steamgifts.com/" || $page_req->status_code === 301) {
 		if ($giveaway_row['count'] === 0) {
-			$stmt = $db->query("INSERT INTO IGiveaways (giv_id, unavailable) VALUES (:giv_id, :unavailable)");
+			$stmt = $db->query("INSERT INTO GiveawaysGeneral (giv_id, unavailable) VALUES (:giv_id, :unavailable)");
 			$stmt->execute(array(
 				':giv_id' => $giv_id,
 				':unavailable' => 1
 			));
 
 			unset($stmt);
+
+			$inserted_id = $db->query("SELECT LAST_INSERT_ID() AS inserted_id");
+			$inserted_id = $inserted_id->fetch(PDO::FETCH_ASSOC);
+			$inserted_id = $inserted_id['inserted_id'];
+
+			$stmt = $db->query("INSERT INTO GiveawaysComments (giveawaysgeneral_id) VALUES (:giveawaysgeneral_id)");
+			$stmt->execute(array(
+				':giveawaysgeneral_id' => $inserted_id
+			));
+
 		} else {
-			$stmt = $db->prepare("UPDATE IGiveaways SET last_ckeched=NULL, unavailable=1 WHERE id=:id");
+			$stmt = $db->prepare("UPDATE GiveawaysGeneral SET last_ckeched=NULL, unavailable=1 WHERE id=:id");
 			$stmt->execute(array(
 				':id' => $giveaway_row['id']
 			));
@@ -370,7 +405,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 
 				// Store this data on the DB
 				if ($giveaway_row['count'] === 0) {
-					$stmt = $db->prepare("INSERT INTO IGiveaways (giv_id, blacklisted, not_region, region) VALUES (:giv_id, :blacklisted, :not_region, :region)");
+					$stmt = $db->prepare("INSERT INTO GiveawaysGeneral (giv_id, blacklisted, not_region, region) VALUES (:giv_id, :blacklisted, :not_region, :region)");
 					$stmt->execute(array(
 						':giv_id' => $giv_id,
 						':blacklisted' => (int)$bBL,
@@ -378,7 +413,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 						':region' => $region
 					));
 				} else {
-					$stmt = $db->prepare("UPDATE IGiveaways SET blacklisted=:blacklisted, not_region=:not_region, region=:region, unavailable=:unavailable, last_checked=NULL WHERE id=:id");
+					$stmt = $db->prepare("UPDATE GiveawaysGeneral SET blacklisted=:blacklisted, not_region=:not_region, region=:region, unavailable=:unavailable, last_checked=NULL WHERE id=:id");
 					$stmt->execute(array(
 						':blacklisted' => (int)$bBL,
 						':not_region' => 1,
@@ -413,14 +448,14 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 			} elseif (strpos($message, "whitelist, or the required Steam groups") !== false) {
 
 				if ($giveaway_row['count'] === 0) {
-					$stmt = $db->prepare("INSERT INTO IGiveaways (giv_id, blacklisted, not_wl_groups) VALUES (:giv_id, :blacklisted, :not_wl_groups)");
+					$stmt = $db->prepare("INSERT INTO GiveawaysGeneral (giv_id, blacklisted, not_wl_groups) VALUES (:giv_id, :blacklisted, :not_wl_groups)");
 					$stmt->execute(array(
 						':giv_id' => $giv_id,
 						':blacklisted' => (int)$bBL,
 						':not_wl_groups' => 1
 					));
 				} else {
-					$stmt = $db->prepare("UPDATE IGiveaways SET blacklisted=:blacklisted, not_wl_groups=:not_wl_groups, unavailable=:unavailable, last_checked=NULL WHERE id=:id");
+					$stmt = $db->prepare("UPDATE GiveawaysGeneral SET blacklisted=:blacklisted, not_wl_groups=:not_wl_groups, unavailable=:unavailable, last_checked=NULL WHERE id=:id");
 					$stmt->execute(array(
 						':blacklisted' => (int)$bBL,
 						':not_wl_groups' => 1,
@@ -452,14 +487,14 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 			} elseif (strpos($message, "whitelist") !== false) {
 
 				if ($giveaway_row['count'] === 0) {
-					$stmt = $db->prepare("INSERT INTO IGiveaways (giv_id, blacklisted, not_whitelisted) VALUES (:giv_id, :blacklisted, :not_whitelisted)");
+					$stmt = $db->prepare("INSERT INTO GiveawaysGeneral (giv_id, blacklisted, not_whitelisted) VALUES (:giv_id, :blacklisted, :not_whitelisted)");
 					$stmt->execute(array(
 						':giv_id' => $giv_id,
 						':blacklisted' => (int)$bBL,
 						':not_whitelisted' => 1
 					));
 				} else {
-					$stmt = $db->prepare("UPDATE IGiveaways SET blacklisted=:blacklisted, not_whitelisted=:not_whitelisted, unavailable=:unavailable, last_checked=NULL WHERE id=:id");
+					$stmt = $db->prepare("UPDATE GiveawaysGeneral SET blacklisted=:blacklisted, not_whitelisted=:not_whitelisted, unavailable=:unavailable, last_checked=NULL WHERE id=:id");
 					$stmt->execute(array(
 						':blacklisted' => (int)$bBL,
 						':not_whitelisted' => 1,
@@ -491,14 +526,14 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 			} elseif (strpos($message, "Steam groups") !== false) {
 
 				if ($giveaway_row['count'] === 0) {
-					$stmt = $db->prepare("INSERT INTO IGiveaways (giv_id, blacklisted, not_groups) VALUES (:giv_id, :blacklisted, :not_groups)");
+					$stmt = $db->prepare("INSERT INTO GiveawaysGeneral (giv_id, blacklisted, not_groups) VALUES (:giv_id, :blacklisted, :not_groups)");
 					$stmt->execute(array(
 						':giv_id' => $giv_id,
 						':blacklisted' => (int)$bBL,
 						':not_groups' => 1
 					));
 				} else {
-					$stmt = $db->prepare("UPDATE IGiveaways SET blacklisted=:blacklisted, not_groups=:not_groups, unavailable=:unavailable, last_checked=NULL WHERE id=:id");
+					$stmt = $db->prepare("UPDATE GiveawaysGeneral SET blacklisted=:blacklisted, not_groups=:not_groups, unavailable=:unavailable, last_checked=NULL WHERE id=:id");
 					$stmt->execute(array(
 						':blacklisted' => (int)$bBL,
 						':not_groups' => 1,
@@ -564,16 +599,16 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 
 			if ($giveaway_row['count'] === 0) {
 				// Code to get id of user, or insert it if inexistant
-				$stmt = $db->prepare("SELECT COUNT(*) AS count, id, nickname FROM IUsers WHERE nickname=:nickname");
+				$stmt = $db->prepare("SELECT COUNT(*) AS count, id, nickname FROM UsersGeneral WHERE nickname=:nickname");
 				$stmt->execute(array(
 					':nickname' => $user
 				));
 
-				$iusers_row = $stmt->fetch(PDO::FETCH_ASSOC);
+				$usersgeneral_row = $stmt->fetch(PDO::FETCH_ASSOC);
 				unset($stmt);
 
-				if ($iusers_row['count'] === 0) {
-					$stmt = $db->prepare("INSERT INTO IUsers (nickname) VALUES (:nickname)");
+				if ($usersgeneral_row['count'] === 0) {
+					$stmt = $db->prepare("INSERT INTO UsersGeneral (nickname) VALUES (:nickname)");
 					$stmt->execute(array(
 						':nickname' => $user
 					));
@@ -583,15 +618,15 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 					$inserted_id = $inserted_id->fetch(PDO::FETCH_ASSOC);
 					$inserted_id = $inserted_id['inserted_id'];
 				} else {
-					$inserted_id = $iusers_row['id'];
+					$inserted_id = $usersgeneral_row['id'];
 				}
 
-				unset($iusers_row);
+				unset($usersgeneral_row);
 
-				$stmt = $db->prepare("INSERT INTO IGiveaways (giv_id, iusers_id, deleted, deleted_reason, deleted_time) VALUES (:giv_id, :iusers_id, :deleted, :deleted_reason, :deleted_time)");
+				$stmt = $db->prepare("INSERT INTO GiveawaysGeneral (giv_id, usersgeneral_id, deleted, deleted_reason, deleted_time) VALUES (:giv_id, :usersgeneral_id, :deleted, :deleted_reason, :deleted_time)");
 				$stmt->execute(array(
 					':giv_id' => $giv_id,
-					':iusers_id' => $inserted_id,
+					':usersgeneral_id' => $inserted_id,
 					':deleted' => 1,
 					':deleted_reason' => $deleted_reason,
 					':deleted_time' => $deleted_time
@@ -599,7 +634,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 
 				unset($stmt);
 			} else {
-				$stmt = $db->prepare("UPDATE IGiveaways SET unavailable=:unavailable, last_checked=NULL WHERE id=:id");
+				$stmt = $db->prepare("UPDATE GiveawaysGeneral SET unavailable=:unavailable, last_checked=NULL WHERE id=:id");
 				$stmt->execute(array(
 					':unavailable' => 0,
 					':id' => $giveaway_row['id']
@@ -712,7 +747,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 				$data['starting_time'] = $start_end_time;
 			} else {
 				$data['ending_time'] = $start_end_time;
-				if (time() >= $ending_time) {
+				if (time() >= $data['ending_time']) {
 					$data['ended'] = true;
 				}
 			}
@@ -800,44 +835,44 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 	}
 	unset($sidebar_numbers);
 
-	// Check if user exists on IUsers
-	$stmt = $db->prepare("SELECT COUNT(*) AS count, id FROM IUsers WHERE nickname=:nickname");
+	// Check if user exists on UsersGeneral
+	$stmt = $db->prepare("SELECT COUNT(*) AS count, id FROM UsersGeneral WHERE nickname=:nickname");
 	$stmt->execute(array(
 		':nickname' => $data['user']
 	));
 
-	$iusers_row = $stmt->fetch(PDO::FETCH_ASSOC);
+	$usersgeneral_row = $stmt->fetch(PDO::FETCH_ASSOC);
 	unset($stmt);
 
-	if ($iusers_row['count'] === 0) {
-		$stmt = $db->prepare("INSERT INTO IUsers (nickname) VALUES (:nickname)");
+	if ($usersgeneral_row['count'] === 0) {
+		$stmt = $db->prepare("INSERT INTO UsersGeneral (nickname) VALUES (:nickname)");
 		$stmt->execute(array(
 			':nickname' => $data['user']
 		));
 
 		unset($stmt);
 
-		$iusers_inserted_id = $db->query("SELECT LAST_INSERT_ID() AS inserted_id");
-		$iusers_inserted_id = $iusers_inserted_id->fetch(PDO::FETCH_ASSOC);
-		$iusers_inserted_id = $iusers_inserted_id['inserted_id'];
+		$usersgeneral_inserted_id = $db->query("SELECT LAST_INSERT_ID() AS inserted_id");
+		$usersgeneral_inserted_id = $usersgeneral_inserted_id->fetch(PDO::FETCH_ASSOC);
+		$usersgeneral_inserted_id = $usersgeneral_inserted_id['inserted_id'];
 	} else {
-		$iusers_inserted_id = $iusers_row['id'];
+		$usersgeneral_inserted_id = $usersgeneral_row['id'];
 	}
-	unset($iusers_row);
+	unset($usersgeneral_row);
 
-	// Check if game exists on GameTitles
+	// Check if game exists on GamesInfo
 	if (!is_null($data['game_id']) && !is_null($data['game_type'])) {
-		$stmt = $db->prepare("SELECT COUNT(*) AS count, id, game_title FROM GameTitles WHERE game_id=:game_id AND game_type=:game_type");
+		$stmt = $db->prepare("SELECT COUNT(*) AS count, id, game_title FROM GamesInfo WHERE game_id=:game_id AND game_type=:game_type");
 		$stmt->execute(array(
 			':game_id' => $data['game_id'],
 			':game_type' => $data['game_type']
 		));
 
-		$gametitles_row = $stmt->fetch(PDO::FETCH_ASSOC);
+		$gamesinfo_row = $stmt->fetch(PDO::FETCH_ASSOC);
 		unset($stmt);
 
-		if ($gametitles_row['count'] === 0 && strlen($game_title) <= 40) {
-			$stmt = $db->prepare("INSERT INTO GameTitles (game_id, game_type, game_title) VALUES (:game_id, :game_type, :game_title)");
+		if ($gamesinfo_row['count'] === 0 && strlen($game_title) <= 40) {
+			$stmt = $db->prepare("INSERT INTO GamesInfo (game_id, game_type, game_title) VALUES (:game_id, :game_type, :game_title)");
 			$stmt->execute(array(
 				':game_id' => $data['game_id'],
 				':game_type' => $data['game_type'],
@@ -848,10 +883,10 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 
 			$data['game_title'] = $game_title;
 
-			$gametitles_inserted_id = $db->query("SELECT LAST_INSERT_ID() AS inserted_id");
-			$gametitles_inserted_id = $gametitles_inserted_id->fetch(PDO::FETCH_ASSOC);
-			$gametitles_inserted_id = $gametitles_inserted_id['inserted_id'];
-		} elseif ($gametitles_row['count'] === 0 && strlen($game_title) > 40) {
+			$gamesinfo_inserted_id = $db->query("SELECT LAST_INSERT_ID() AS inserted_id");
+			$gamesinfo_inserted_id = $gamesinfo_inserted_id->fetch(PDO::FETCH_ASSOC);
+			$gamesinfo_inserted_id = $gamesinfo_inserted_id['inserted_id'];
+		} elseif ($gamesinfo_row['count'] === 0 && strlen($game_title) > 40) {
 			$api_request = APIRequests::generic_get_request('http://api.sighery.com/SteamGifts/Interactions/GetGameTitle/?id=' . $data['game_id'] . "&type=" . $data['game_type']);
 
 			if ($api_request->status_code !== 200) {
@@ -868,48 +903,47 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 			$api_request = json_decode($api_request, true);
 
 			$data['game_title'] = $api_request['game_title'];
-			$gametitles_inserted_id = $api_request['id'];
-		} elseif ($gametitles_row['count'] === 1 && strlen($game_title) > 40) {
-			$data['game_title'] = $gametitles_row['game_title'];
-			$gametitles_inserted_id = $gametitles_row['id'];
+			$gamesinfo_inserted_id = $api_request['id'];
+		} elseif ($gamesinfo_row['count'] === 1 && strlen($game_title) > 40) {
+			$data['game_title'] = $gamesinfo_row['game_title'];
+			$gamesinfo_inserted_id = $gamesinfo_row['id'];
 		} else {
 			$data['game_title'] = $game_title;
-			$gametitles_inserted_id = $gametitles_row['id'];
+			$gamesinfo_inserted_id = $gamesinfo_row['id'];
 		}
-		unset($gametitles_row);
+		unset($gamesinfo_row);
 	}
 
 	if ($giveaway_row['count'] === 0) {
 		if (!is_null($store_link)) {
-			$stmt = $db->prepare("INSERT INTO IGiveaways (blacklisted, ended, region, giv_id, iusers_id, giv_type, level, copies, points, gametitles_id, created_time, starting_time, ending_time, comments, entries, description) VALUES (:blacklisted, :ended, :region, :giv_id, :iusers_id, :giv_type, :level, :copies, :points, :gametitles_id, :created_time, :starting_time, :ending_time, :comments, :entries, :description)");
+			$stmt = $db->prepare("INSERT INTO GiveawaysGeneral (blacklisted, ended, region, giv_id, usersgeneral_id, giv_type, level, copies, points, gamesinfo_id, created_time, starting_time, ending_time, comments, entries) VALUES (:blacklisted, :ended, :region, :giv_id, :usersgeneral_id, :giv_type, :level, :copies, :points, :gamesinfo_id, :created_time, :starting_time, :ending_time, :comments, :entries)");
 			$stmt->execute(array(
 				':blacklisted' => (int)$bBL,
 				':ended' => (int)$data['ended'],
 				':region' => $data['region'],
 				':giv_id' => $data['id'],
-				':iusers_id' => $iusers_inserted_id,
+				':usersgeneral_id' => $usersgeneral_inserted_id,
 				':giv_type' => $data['type'],
 				':level' => $data['level'],
 				':copies' => $data['copies'],
 				':points' => $data['points'],
-				':gametitles_id' => $gametitles_inserted_id,
+				':gamesinfo_id' => $gamesinfo_inserted_id,
 				':created_time' => $data['created_time'],
 				':starting_time' => $data['starting_time'],
 				':ending_time' => $data['ending_time'],
 				':comments' => $data['comments'],
-				':entries' => $data['entries'],
-				':description' => $data['description']
+				':entries' => $data['entries']
 			));
 
 			unset($stmt);
 		} else {
-			$stmt = $db->prepare("INSERT INTO IGiveaways (blacklisted, ended, region, giv_id, iusers_id, giv_type, level, copies, points, not_steam_game, created_time, starting_time, ending_time, comments, entries, description) VALUES (:blacklisted, :ended, :region, :giv_id, :iusers_id, :giv_type, :level, :copies, :points, :not_steam_game, :created_time, :starting_time, :ending_time, :comments, :entries, :description)");
+			$stmt = $db->prepare("INSERT INTO GiveawaysGeneral (blacklisted, ended, region, giv_id, usersgeneral_id, giv_type, level, copies, points, not_steam_game, created_time, starting_time, ending_time, comments, entries) VALUES (:blacklisted, :ended, :region, :giv_id, :usersgeneral_id, :giv_type, :level, :copies, :points, :not_steam_game, :created_time, :starting_time, :ending_time, :comments, :entries)");
 			$stmt->execute(array(
 				':blacklisted' => (int)$bBL,
 				':ended' => (int)$data['ended'],
 				':region' => $data['region'],
 				':giv_id' => $data['id'],
-				':iusers_id' => $iusers_inserted_id,
+				':usersgeneral_id' => $usersgeneral_inserted_id,
 				':giv_type' => $data['type'],
 				':level' => $data['level'],
 				':copies' => $data['copies'],
@@ -919,13 +953,18 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 				':starting_time' => $data['starting_time'],
 				':ending_time' => $data['ending_time'],
 				':comments' => $data['comments'],
-				':entries' => $data['entries'],
-				':description' => $data['description']
+				':entries' => $data['entries']
 			));
+
+			unset($stmt);
 		}
+
+		$inserted_id = $db->query("SELECT LAST_INSERT_ID() AS inserted_id");
+		$inserted_id = $inserted_id->fetch(PDO::FETCH_ASSOC);
+		$inserted_id = $inserted_id['inserted_id'];
 	} else {
 		if (!is_null($store_link)) {
-			$stmt = $db->prepare("UPDATE IGiveaways SET blacklisted=:blacklisted, ended=:ended, region=:region, giv_type=:giv_type, level=:level, copies=:copies, points=:points, gametitles_id=:gametitles_id, ending_time=:ending_time, comments=:comments, entries=:entries, description=:description WHERE giv_id=:giv_id");
+			$stmt = $db->prepare("UPDATE GiveawaysGeneral SET blacklisted=:blacklisted, ended=:ended, region=:region, giv_type=:giv_type, level=:level, copies=:copies, points=:points, gamesinfo_id=:gamesinfo_id, ending_time=:ending_time, comments=:comments, entries=:entries WHERE giv_id=:giv_id");
 			$stmt->execute(array(
 				':blacklisted' => (int)$bBL,
 				':ended' => (int)$data['ended'],
@@ -934,17 +973,16 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 				':level' => $data['level'],
 				':copies' => $data['copies'],
 				':points' => $data['points'],
-				':gametitles_id' => $gametitles_inserted_id,
+				':gamesinfo_id' => $gamesinfo_inserted_id,
 				':ending_time' => $data['ending_time'],
 				':comments' => $data['comments'],
 				':entries' => $data['entries'],
-				':description' => $data['description'],
 				':giv_id' => $data['id']
 			));
 
 			unset($stmt);
 		} else {
-			$stmt = $db->prepare("UPDATE IGiveaways SET blacklisted=:blacklisted, ended=:ended, region=:region, giv_type=:giv_type, level=:level, copies=:copies, points=:points, not_steam_game=:not_steam_game, ending_time=:ending_time, comments=:comments, entries=:entries, description=:description WHERE giv_id=:giv_id");
+			$stmt = $db->prepare("UPDATE GiveawaysGeneral SET blacklisted=:blacklisted, ended=:ended, region=:region, giv_type=:giv_type, level=:level, copies=:copies, points=:points, not_steam_game=:not_steam_game, ending_time=:ending_time, comments=:comments, entries=:entries WHERE giv_id=:giv_id");
 			$stmt->execute(array(
 				':blacklisted' => (int)$bBL,
 				':ended' => (int)$data['ended'],
@@ -957,9 +995,32 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 				':ending_time' => $data['ending_time'],
 				':comments' => $data['comments'],
 				':entries' => $data['entries'],
-				':description' => $data['description'],
 				':giv_id' => $data['id']
 			));
+
+			unset($stmt);
+		}
+
+		$inserted_id = $giveaway_row['id'];
+	}
+
+	if ($description_row['count'] === 0) {
+		$stmt = $db->prepare("INSERT INTO GiveawaysComments (giveawaysgeneral_id, description) VALUES (:giveawaysgeneral_id, :description)");
+		$stmt->execute(array(
+			':giveawaysgeneral_id' => $inserted_id,
+			':description' => $data['description']
+		));
+
+		unset($stmt);
+	} else {
+		if ($description_row['description'] !== $data['description']) {
+			$stmt = $db->prepare("UPDATE GiveawaysComments SET description=:description WHERE giveawaysgeneral_id=:giveawaysgeneral_id");
+			$stmt->execute(array(
+				':description' => $data['description'],
+				':giveawaysgeneral_id' => $inserted_id
+			));
+
+			unset($stmt);
 		}
 	}
 

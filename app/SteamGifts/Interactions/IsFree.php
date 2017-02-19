@@ -41,22 +41,20 @@ $app->get('/SteamGifts/Interactions/IsFree/', function($request, $response) {
 	}
 
 	// Retrieve the local data of the game title if it exists
-	$sql_string = "SELECT COUNT(*) AS count, id, game_title, unavailable, UNIX_TIMESTAMP(last_checked) AS last_checked FROM GameTitles WHERE game_type=:game_type AND game_id=:game_id";
-	$stmt = $db->prepare($sql_string);
+	$stmt = $db->prepare("SELECT COUNT(*) AS count, id, game_title, unavailable, UNIX_TIMESTAMP(last_checked) AS last_checked FROM GamesInfo WHERE game_type=:game_type AND game_id=:game_id");
 	$stmt->execute(array(
 		':game_type' => $type,
 		':game_id' => $id
 	));
-	$gametitles_row = $stmt->fetch(PDO::FETCH_ASSOC);
+	$gamesinfo_row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-	unset($sql_string);
 	unset($stmt);
 
 
 	$title;
 	$inserted_id;
 	$brecord_title = false;
-	if ($gametitles_row['count'] === 0 || (time() - $gametitles_row['last_checked']) >= MAX_TIME_TITLE_CACHE) {
+	if ($gamesinfo_row['count'] === 0 || (time() - $gamesinfo_row['last_checked']) >= MAX_TIME_TITLE_CACHE) {
 		// There's either no local data or is outdated
 		$json;
 
@@ -81,15 +79,15 @@ $app->get('/SteamGifts/Interactions/IsFree/', function($request, $response) {
 		// If the Steam API response is false we return a 500 error and store
 		//that it's unavailable if there was no record of given game on the DB yet
 		if ($json[$str_id]['success'] === false) {
-			if ($gametitles_row['count'] === 0) {
-				$stmt = $db->prepare("INSERT INTO GameTitles (game_type, game_id, unavailable) VALUES (:game_type, :game_id, :unavailable)");
+			if ($gamesinfo_row['count'] === 0) {
+				$stmt = $db->prepare("INSERT INTO GamesInfo (game_type, game_id, unavailable) VALUES (:game_type, :game_id, :unavailable)");
 				$stmt->execute(array(
 					':game_type' => $type,
 					':game_id' => $id,
 					':unavailable' => 1
 				));
 			} else {
-				$stmt = $db->prepare("UPDATE GameTitles SET unavailable=:unavailable, last_checked=NULL WHERE game_type=:game_type AND game_id=:game_id");
+				$stmt = $db->prepare("UPDATE GamesInfo SET unavailable=:unavailable, last_checked=NULL WHERE game_type=:game_type AND game_id=:game_id");
 				$stmt->execute(array(
 					':unavailable' => 1,
 					':game_type' => $type,
@@ -99,7 +97,7 @@ $app->get('/SteamGifts/Interactions/IsFree/', function($request, $response) {
 
 			unset($stmt);
 
-			if ($gametitles_row['count'] === 0 || is_null($gametitles_row['game_title'])) {
+			if ($gamesinfo_row['count'] === 0 || is_null($gamesinfo_row['game_title'])) {
 				return $response->withHeader('Access-Control-Allow-Origin', '*')
 				->withHeader('Content-type', 'application/json')->withJson(array(
 				"errors" => array(
@@ -115,33 +113,30 @@ $app->get('/SteamGifts/Interactions/IsFree/', function($request, $response) {
 		// At this point the Steam API response was successful or there was
 		//a stored record of given game when it was still available
 		if ($brecord_title) {
-			$title = $gametitles_row['game_title'];
+			$title = $gamesinfo_row['game_title'];
 		} else {
 			$title = $json[$str_id]['data']['name'];
 		}
 
 
-		if ($gametitles_row['count'] == 1 && ($gametitles_row['game_title'] == $title || $gametitles_row['unavailable'] == 1)) {
+		if ($gamesinfo_row['count'] == 1 && ($gamesinfo_row['game_title'] == $title || $gamesinfo_row['unavailable'] == 1)) {
 			// There was that info but the data was outdated. Title is still the
 			//same or unavailable was 1
-			$db->query("UPDATE GameTitles SET unavailable=0, last_checked=NULL WHERE id=" . $gametitles_row['id']);
-		} elseif ($gametitles_row['count'] == 1 && ($gametitles_row['game_title'] != $title || $gametitles_row['unavailable'] == 1)) {
+			$db->query("UPDATE GamesInfo SET unavailable=0, last_checked=NULL WHERE id=" . $gamesinfo_row['id']);
+		} elseif ($gamesinfo_row['count'] == 1 && ($gamesinfo_row['game_title'] != $title || $gamesinfo_row['unavailable'] == 1)) {
 			// There was that info but the data was outdated. Title isn't the
 			//same or unavailable was 1
-			$sql_string = "UPDATE GameTitles SET game_title=:game_title, last_checked=NULL, unavailable=:unavailable WHERE id=:id";
-			$stmt = $db->prepare($sql_string);
+			$stmt = $db->prepare("UPDATE GamesInfo SET game_title=:game_title, last_checked=NULL, unavailable=:unavailable WHERE id=:id");
 			$stmt->execute(array(
 				':game_title' => $title,
-				':id' => $gametitles_row['id'],
+				':id' => $gamesinfo_row['id'],
 				':unavailable' => 0
 			));
 
-			unset($sql_string);
 			unset($stmt);
 		} else {
 			// There was no data, INSERT.
-						$sql_string = "INSERT INTO GameTitles (game_type, game_id, game_title, unavailable) VALUES (:game_type, :game_id, :game_title, :unavailable)";
-			$stmt = $db->prepare($sql_string);
+			$stmt = $db->prepare("INSERT INTO GamesInfo (game_type, game_id, game_title, unavailable) VALUES (:game_type, :game_id, :game_title, :unavailable)");
 			$stmt->execute(array(
 				':game_type' => $type,
 				':game_id' => $id,
@@ -151,7 +146,6 @@ $app->get('/SteamGifts/Interactions/IsFree/', function($request, $response) {
 			$inserted_id = $db->query("SELECT LAST_INSERT_ID() AS inserted_id");
 			$inserted_id = $inserted_id->fetch(PDO::FETCH_ASSOC);
 
-			unset($sql_string);
 			unset($stmt);
 		}
 
@@ -159,16 +153,16 @@ $app->get('/SteamGifts/Interactions/IsFree/', function($request, $response) {
 	} else {
 		// There was data and wasn't outdated, if unavailable is 1 we return 500
 		//else we store the stored title
-		if ((bool)$gametitles_row['unavailable'] && is_null($gametitles_row['game_title'])) {
+		if ((bool)$gamesinfo_row['unavailable'] && is_null($gamesinfo_row['game_title'])) {
 			return $response->withHeader('Access-Control-Allow-Origin', '*')
 			->withHeader('Content-type', 'application/json')->withJson(array(
 			"errors" => array(
 				"code" => 1,
 				"description" => "Game inexistant or not available in the server's region",
-				"game_title" => $gametitles_row['game_title']
+				"game_title" => $gamesinfo_row['game_title']
 			)), 500);
 		}
-		$title = $gametitles_row['game_title'];
+		$title = $gamesinfo_row['game_title'];
 	}
 
 	// Template of the successful response JSON
@@ -188,14 +182,14 @@ $app->get('/SteamGifts/Interactions/IsFree/', function($request, $response) {
 	);
 
 
-	// Code to get the id from the GameTitles row and use it on the SGGamesFree
+	// Code to get the id from the GamesInfo row and use it on the FreeGamesSG
 	//table to locate the row we want if it exists, or create it otherwise
 	if (isset($inserted_id)) {
 		$inserted_id = $inserted_id['inserted_id'];
 	} else {
-		$inserted_id = $gametitles_row['id'];
+		$inserted_id = $gamesinfo_row['id'];
 	}
-	$stmt = $db->query("SELECT COUNT(*) AS count, is_free, UNIX_TIMESTAMP(last_checked) AS last_checked FROM SGGamesFree WHERE gametitles_id=" . $inserted_id);
+	$stmt = $db->query("SELECT COUNT(*) AS count, is_free, UNIX_TIMESTAMP(last_checked) AS last_checked FROM FreeGamesSG WHERE gamesinfo_id=" . $inserted_id);
 
 	$gamesfree_row = $stmt->fetch(PDO::FETCH_ASSOC);
 	unset($stmt);
@@ -248,14 +242,14 @@ $app->get('/SteamGifts/Interactions/IsFree/', function($request, $response) {
 		if ($gamesfree_row['count'] == 1 && $gamesfree_row['is_free'] == $data['free']) {
 			// There was that info but the data was outdated. The game is still
 			//free/not free so we just update last_checked
-			$db->query("UPDATE SGGamesFree SET last_checked=NULL WHERE gametitles_id=" . $inserted_id);
+			$db->query("UPDATE FreeGamesSG SET last_checked=NULL WHERE gamesinfo_id=" . $inserted_id);
 		} elseif ($gamesfree_row['count'] == 1 && $gamesfree_row['is_free'] != $data['free']) {
 			// There was that info but the data was outdated. The game isn't
 			//free/not free anymore so we update is_free and last_checked
-			$db->query("UPDATE SGGamesFree SET last_checked=NULL, is_free=" . (int)$data['free'] . " WHERE gametitles_id=" . $inserted_id);
+			$db->query("UPDATE FreeGamesSG SET last_checked=NULL, is_free=" . (int)$data['free'] . " WHERE gamesinfo_id=" . $inserted_id);
 		} else {
 			// There wasn't that info, we INSERT it
-			$db->query("INSERT INTO SGGamesFree (gametitles_id, is_free) VALUES (" . $inserted_id . ", " . (int)$data['free'] . ")");
+			$db->query("INSERT INTO FreeGamesSG (gamesinfo_id, is_free) VALUES (" . $inserted_id . ", " . (int)$data['free'] . ")");
 		}
 
 	} else {

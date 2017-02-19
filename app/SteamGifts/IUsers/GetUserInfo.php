@@ -55,7 +55,7 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 		'last_online' => null,
 		'registered' => null,
 		'comments' => null,
-		'gibs_entered' => null,
+		'givs_entered' => null,
 		'gifts_won' => null,
 		'gifts_won_value' => null,
 		'gifts_sent' => null,
@@ -113,18 +113,18 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 		}
 
 		if ($bid) {
-			$stmt = $db->query("SELECT COUNT(*) AS count, " . $filters_string . ", unavailable, steamid64 as steamid64private, UNIX_TIMESTAMP(last_checked) AS last_checked FROM IUsers WHERE steamid64=" . $id);
+			$stmt = $db->query("SELECT COUNT(*) AS count, " . $filters_string . ", unavailable, steamid64 as steamid64private, UNIX_TIMESTAMP(last_checked) AS last_checked FROM UsersGeneral WHERE steamid64=" . $id);
 		} else {
-			$stmt = $db->query("SELECT COUNT(*) AS count, " . $filters_string . ", unavailable, steamid64 as steamid64private, UNIX_TIMESTAMP(last_checked) AS last_checked FROM IUsers WHERE nickname='" . $user . "'");
+			$stmt = $db->query("SELECT COUNT(*) AS count, " . $filters_string . ", unavailable, steamid64 as steamid64private, UNIX_TIMESTAMP(last_checked) AS last_checked FROM UsersGeneral WHERE nickname='" . $user . "'");
 		}
 
 		unset($filters_string);
 
 	} else {
 		if ($bid) {
-			$stmt = $db->query("SELECT COUNT(*) AS count, steamid64, nickname, role, last_online, registered, comments, gibs_entered, gifts_won, gifts_won_value, gifts_sent, gifts_sent_value, gifts_awaiting_feedback, gifts_not_sent, contributor_level, suspension_type, suspension_end_time, unavailable, UNIX_TIMESTAMP(last_checked) AS last_checked FROM IUsers WHERE steamid64=" . $id);
+			$stmt = $db->query("SELECT COUNT(*) AS count, steamid64, nickname, role, last_online, registered, comments, givs_entered, gifts_won, gifts_won_value, gifts_sent, gifts_sent_value, gifts_awaiting_feedback, gifts_not_sent, contributor_level, suspension_type, suspension_end_time, unavailable, UNIX_TIMESTAMP(last_checked) AS last_checked FROM UsersGeneral WHERE steamid64=" . $id);
 		} else {
-			$stmt = $db->query("SELECT COUNT(*) AS count, steamid64, nickname, role, last_online, registered, comments, gibs_entered, gifts_won, gifts_won_value, gifts_sent, gifts_sent_value, gifts_awaiting_feedback, gifts_not_sent, contributor_level, suspension_type, suspension_end_time, unavailable, UNIX_TIMESTAMP(last_checked) AS last_checked FROM IUsers WHERE nickname='" . $user . "'");
+			$stmt = $db->query("SELECT COUNT(*) AS count, steamid64, nickname, role, last_online, registered, comments, givs_entered, gifts_won, gifts_won_value, gifts_sent, gifts_sent_value, gifts_awaiting_feedback, gifts_not_sent, contributor_level, suspension_type, suspension_end_time, unavailable, UNIX_TIMESTAMP(last_checked) AS last_checked FROM UsersGeneral WHERE nickname='" . $user . "'");
 		}
 	}
 
@@ -214,9 +214,9 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 		// User doesn't exist, store it and wait until the next check.
 		if ($bid) {
 			if ($row['count'] === 1) {
-				$stmt = $db->prepare("UPDATE IUsers SET unavailable=:unavailable, last_checked=NULL WHERE steamid64=:steamid64");
+				$stmt = $db->prepare("UPDATE UsersGeneral SET unavailable=:unavailable, last_checked=NULL WHERE steamid64=:steamid64");
 			} else {
-				$stmt = $db->prepare("INSERT INTO IUsers (unavailable, steamid64) VALUES (:unavailable, :steamid64)");
+				$stmt = $db->prepare("INSERT INTO UsersGeneral (unavailable, steamid64) VALUES (:unavailable, :steamid64)");
 			}
 			$stmt->execute(array(
 				':unavailable' => 1,
@@ -224,9 +224,9 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 			));
 		} else {
 			if ($row['count'] === 1) {
-				$stmt = $db->prepare("UPDATE IUsers SET unavailable=:unavailable, last_checked=NULL WHERE nickname=:nickname");
+				$stmt = $db->prepare("UPDATE UsersGeneral SET unavailable=:unavailable, last_checked=NULL WHERE nickname=:nickname");
 			} else {
-				$stmt = $db->prepare("INSERT INTO IUsers (unavailable, nickname) VALUES (:unavailable, :nickname)");
+				$stmt = $db->prepare("INSERT INTO UsersGeneral (unavailable, nickname) VALUES (:unavailable, :nickname)");
 			}
 			$stmt->execute(array(
 				':unavailable' => 1,
@@ -255,7 +255,7 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 		'last_online' => null,
 		'registered' => null,
 		'comments' => null,
-		'gibs_entered' => null,
+		'givs_entered' => null,
 		'gifts_won' => null,
 		'gifts_won_value' => null,
 		'gifts_sent' => null,
@@ -339,10 +339,10 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 				}
 				break;
 			case 'Giveaways Entered':
-				$data['gibs_entered'] = intval(str_replace(",", "", $elem->children(1)->innertext));
+				$data['givs_entered'] = intval(str_replace(",", "", $elem->children(1)->innertext));
 
-				if (isset($filters) && in_array('gibs_entered', $filters)) {
-					$filtered_data['gibs_entered'] = $data['gibs_entered'];
+				if (isset($filters) && in_array('givs_entered', $filters)) {
+					$filtered_data['givs_entered'] = $data['givs_entered'];
 				}
 				break;
 			case 'Gifts Won':
@@ -433,7 +433,7 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 
 	// Check if count from $row was empty and use INSERT. UPDATE is it wasn't 0
 	if ($bid) {
-		$stmt = $db->prepare("SELECT COUNT(*) AS count, id FROM IUsers WHERE nickname=:nickname");
+		$stmt = $db->prepare("SELECT COUNT(*) AS count, id FROM UsersGeneral WHERE nickname=:nickname");
 		$stmt->execute(array(
 			':nickname' => $data['nickname']
 		));
@@ -445,13 +445,13 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 	}
 
 	if ($row['count'] === 0 && $nickname_row['count'] === 0) {
-		$sql_string = "INSERT INTO IUsers (steamid64, nickname, role, last_online, registered, comments, gibs_entered, gifts_won, gifts_won_value, gifts_sent, gifts_sent_value, gifts_awaiting_feedback, gifts_not_sent, contributor_level, suspension_type, suspension_end_time, unavailable) VALUES (:steamid64, :nickname, :role, :last_online, :registered, :comments, :gibs_entered, :gifts_won, :gifts_won_value, :gifts_sent, :gifts_sent_value, :gifts_awaiting_feedback, :gifts_not_sent, :contributor_level, :suspension_type, :suspension_end_time, 0)";
+		$sql_string = "INSERT INTO UsersGeneral (steamid64, nickname, role, last_online, registered, comments, givs_entered, gifts_won, gifts_won_value, gifts_sent, gifts_sent_value, gifts_awaiting_feedback, gifts_not_sent, contributor_level, suspension_type, suspension_end_time, unavailable) VALUES (:steamid64, :nickname, :role, :last_online, :registered, :comments, :givs_entered, :gifts_won, :gifts_won_value, :gifts_sent, :gifts_sent_value, :gifts_awaiting_feedback, :gifts_not_sent, :contributor_level, :suspension_type, :suspension_end_time, 0)";
 
 	} elseif ($row['count'] === 0 && $nickname_row['count'] === 1) {
-		$sql_string = "UPDATE IUsers SET steamid64=:steamid64, nickname=:nickname, role=:role, last_online=:last_online, registered=:registered, comments=:comments, gibs_entered=:gibs_entered, gifts_won=:gifts_won, gifts_won_value=:gifts_won_value, gifts_sent=:gifts_sent, gifts_sent_value=:gifts_sent_value, gifts_awaiting_feedback=:gifts_awaiting_feedback, gifts_not_sent=:gifts_not_sent, contributor_level=:contributor_level, suspension_type=:suspension_type, suspension_end_time=:suspension_end_time, unavailable=0, last_checked=NULL WHERE id=" . $nickname_row['id'];
+		$sql_string = "UPDATE UsersGeneral SET steamid64=:steamid64, nickname=:nickname, role=:role, last_online=:last_online, registered=:registered, comments=:comments, givs_entered=:givs_entered, gifts_won=:gifts_won, gifts_won_value=:gifts_won_value, gifts_sent=:gifts_sent, gifts_sent_value=:gifts_sent_value, gifts_awaiting_feedback=:gifts_awaiting_feedback, gifts_not_sent=:gifts_not_sent, contributor_level=:contributor_level, suspension_type=:suspension_type, suspension_end_time=:suspension_end_time, unavailable=0, last_checked=NULL WHERE id=" . $nickname_row['id'];
 
 	} else {
-		$sql_string = "UPDATE IUsers SET steamid64=:steamid64, nickname=:nickname, role=:role, last_online=:last_online, registered=:registered, comments=:comments, gibs_entered=:gibs_entered, gifts_won=:gifts_won, gifts_won_value=:gifts_won_value, gifts_sent=:gifts_sent, gifts_sent_value=:gifts_sent_value, gifts_awaiting_feedback=:gifts_awaiting_feedback, gifts_not_sent=:gifts_not_sent, contributor_level=:contributor_level, suspension_type=:suspension_type, suspension_end_time=:suspension_end_time, unavailable=0, last_checked=NULL WHERE steamid64=" . $data['steamid64'] . " OR nickname='" . $data['nickname'] . "'";
+		$sql_string = "UPDATE UsersGeneral SET steamid64=:steamid64, nickname=:nickname, role=:role, last_online=:last_online, registered=:registered, comments=:comments, givs_entered=:givs_entered, gifts_won=:gifts_won, gifts_won_value=:gifts_won_value, gifts_sent=:gifts_sent, gifts_sent_value=:gifts_sent_value, gifts_awaiting_feedback=:gifts_awaiting_feedback, gifts_not_sent=:gifts_not_sent, contributor_level=:contributor_level, suspension_type=:suspension_type, suspension_end_time=:suspension_end_time, unavailable=0, last_checked=NULL WHERE steamid64=" . $data['steamid64'] . " OR nickname='" . $data['nickname'] . "'";
 	}
 
 	// Prepare the statement and execute it
@@ -463,7 +463,7 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 		':last_online' => $data['last_online'],
 		':registered' => $data['registered'],
 		':comments' => $data['comments'],
-		':gibs_entered' => $data['gibs_entered'],
+		':givs_entered' => $data['givs_entered'],
 		':gifts_won' => $data['gifts_won'],
 		':gifts_won_value' => $data['gifts_won_value'],
 		':gifts_sent' => $data['gifts_sent'],
