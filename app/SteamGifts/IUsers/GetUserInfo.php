@@ -444,11 +444,40 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 
 	if ($user_row['count'] === 0) {
 		$sql_string = "INSERT INTO UsersGeneral (steamid64, nickname, role, last_online, registered, comments, givs_entered, gifts_won, gifts_won_value, gifts_sent, gifts_sent_value, gifts_awaiting_feedback, gifts_not_sent, contributor_level, suspension_type, suspension_end_time, unavailable) VALUES (:steamid64, :nickname, :role, :last_online, :registered, :comments, :givs_entered, :gifts_won, :gifts_won_value, :gifts_sent, :gifts_sent_value, :gifts_awaiting_feedback, :gifts_not_sent, :contributor_level, :suspension_type, :suspension_end_time, 0)";
-
 	} elseif ($user_row['count'] === 1) {
 		$sql_string = "UPDATE UsersGeneral SET steamid64=:steamid64, nickname=:nickname, role=:role, last_online=:last_online, registered=:registered, comments=:comments, givs_entered=:givs_entered, gifts_won=:gifts_won, gifts_won_value=:gifts_won_value, gifts_sent=:gifts_sent, gifts_sent_value=:gifts_sent_value, gifts_awaiting_feedback=:gifts_awaiting_feedback, gifts_not_sent=:gifts_not_sent, contributor_level=:contributor_level, suspension_type=:suspension_type, suspension_end_time=:suspension_end_time, unavailable=0, last_checked=NULL WHERE id=" . $user_row['id'];
+	} else {
+		// Count was more than 1, we should first purge the DB and then UPDATE
+		$stmt = $db->prepare("SELECT id FROM UsersGeneral WHERE steamid64=:steamid64 OR nickname=:nickname ORDER BY id");
+		$stmt->execute(array(
+			':steamid64' => $data['steamid64'],
+			':nickname' => $data['nickname']
+		));
 
+		$count = 0;
+		$lowest_id;
+
+		while($duplicate_row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+			if ($count !== 0) {
+				$stmt2 = $db->prepare("DELETE FROM UsersGeneral WHERE id=:id");
+				$stmt2->execute(array(
+					':id' => $duplicate_row['id']
+				));
+				unset($stmt2);
+
+				$count++;
+			} else {
+				$lowest_id = $duplicate_row['id'];
+				$count++;
+				continue;
+			}
+		}
+
+		$sql_string = "UPDATE UsersGeneral SET steamid64=:steamid64, nickname=:nickname, role=:role, last_online=:last_online, registered=:registered, comments=:comments, givs_entered=:givs_entered, gifts_won=:gifts_won, gifts_won_value=:gifts_won_value, gifts_sent=:gifts_sent, gifts_sent_value=:gifts_sent_value, gifts_awaiting_feedback=:gifts_awaiting_feedback, gifts_not_sent=:gifts_not_sent, contributor_level=:contributor_level, suspension_type=:suspension_type, suspension_end_time=:suspension_end_time, unavailable=0, last_checked=NULL WHERE id=" . $lowest_id;
+
+		unset($stmt);
 	}
+
 
 	// Prepare the statement and execute it
 	$stmt = $db->prepare($sql_string);
