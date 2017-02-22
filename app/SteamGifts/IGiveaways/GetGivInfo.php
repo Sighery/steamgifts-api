@@ -906,7 +906,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 			}
 
 
-			$api_request = json_decode($api_request, true);
+			$api_request = json_decode($api_request->body, true);
 
 			$data['game_title'] = $api_request['game_title'];
 			$gamesinfo_inserted_id = $api_request['id'];
