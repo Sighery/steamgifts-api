@@ -128,12 +128,50 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 		}
 	}
 
+	// Check if count was more than 1 and purge the DB if so
+	$row = $stmt->fetch(PDO::FETCH_ASSOC);
+	unset($stmt);
+
+	if ($row['count'] > 1) {
+		if ($bid) {
+			$stmt = $db->query("SELECT id FROM UsersGeneral WHERE steamid64=:steamid64 ORDER BY id");
+			$stmt->execute(array(
+				':steamid64' => $id
+			));
+		} else {
+			$stmt = $db->query("SELECT id FROM UsersGeneral WHERE nickname=:nickname ORDER BY id");
+			$stmt->execute(array(
+				':nickname' => $user
+			));
+		}
+
+		$count = 0;
+
+		while($duplicate_row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+			if ($count !== 0) {
+				$stmt2 = $db->prepare("DELETE FROM UsersGeneral WHERE id=:id");
+				$stmt2->execute(array(
+					':id' => $duplicate_row['id']
+				));
+				unset($stmt2);
+
+				$count++;
+			} else {
+				$row = $duplicate_row;
+				$count++;
+				continue;
+			}
+		}
+
+		unset($count);
+		unset($stmt);
+	}
+
 	// Check if the response from the DB has count 0, meaning there was no row
 	//matching the user requested; if steamid64 is missing, meaning the row just
 	//contains the nickname, probably populated by some other method; or if the
 	//data is outdated. If any of these is true, meaning 0 rows or outdated data,
 	//we ask SG for the profile instead
-	$row = $stmt->fetch(PDO::FETCH_ASSOC);
 	if ($row['count'] === 1 && isset($row['steamid64private']) && $row['unavailable'] === 0 && (time() - $row['last_checked']) <= MAX_TIME_PROFILE_CACHE) {
 		if ($bfilters) {
 			$filtered_data = $row;
