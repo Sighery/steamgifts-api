@@ -157,7 +157,16 @@ $app->get('/SteamGifts/IUsers/GetUserInfo/', function($request, $response) {
 
 				$count++;
 			} else {
-				$row = $duplicate_row;
+				if ($row['id'] !== $duplicate_row['id']) {
+					$stmt2 = $db->prepare("SELECT COUNT(*) AS count, steamid64, nickname, role, last_online, registered, comments, givs_entered, gifts_won, gifts_won_value, gifts_sent, gifts_sent_value, gifts_awaiting_feedback, gifts_not_sent, contributor_level, suspension_type, suspension_end_time, unavailable, UNIX_TIMESTAMP(last_checked) AS last_checked FROM UsersGeneral WHERE id=:id");
+					$stmt2->execute(array(
+						':id' => $duplicate_row['id']
+					));
+
+					$row = $stmt2->fetch(PDO::FETCH_ASSOC);
+					unset($stmt2);
+				}
+
 				$count++;
 				continue;
 			}
