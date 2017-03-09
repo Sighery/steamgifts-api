@@ -186,7 +186,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 	} else {
 		$page_request = APIRequests::sg_generic_get_request("https://www.steamgifts.com/giveaway/" . $giv_id . "/", true);
 
-		if ($page_request->status_code !== 200 && $page_request->status_code !== 301) {
+		if ($page_request->status_code !== 200) {
 			// SG is down. END.
 
 			return $response->withHeader('Access-Control-Allow-Origin', '*')
@@ -196,13 +196,15 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 				'code' => 0,
 				'description' => 'The request to SG was unsuccessful'
 			)), 500);
-		} elseif ($page_request->url === "https://www.steamgifts.com/" || $page_request->status_code === 301) {
+		} elseif ($page_request->url === "https://www.steamgifts.com/") {
 			// Giveaway doesn't exist, store and exit. END.
 
-			$stmt = $db->prepare("INSERT INTO GiveawaysGeneral (giv_id, unavailable) VALUES (:giv_id, :unavailable)");
+			$stmt = $db->prepare("INSERT INTO GiveawaysGeneral (giv_id, unavailable) VALUES (:giv_id, :unavailable) ON DUPLICATE KEY UPDATE unavailable=:unavailable2, last_checked=:last_checked");
 			$stmt->execute(array(
 				':giv_id' => $giv_id,
-				':unavailable' => 1
+				':unavailable' => 1,
+				':unavailable2' => 1,
+				':last_checked' => null
 			));
 
 			unset($stmt);
@@ -270,7 +272,7 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 
 				$page_request = APIRequests::sg_generic_get_request("https://www.steamgifts.com/giveaway/" . $giv_id . "/", true, false);
 
-				if ($page_request->status_code !== 200 && $page_request->status_code !== 301) {
+				if ($page_request->status_code !== 200) {
 					// SG is down. END.
 
 					return $response->withHeader('Access-Control-Allow-Origin', '*')
@@ -279,13 +281,15 @@ $app->get('/SteamGifts/IGiveaways/GetGivInfo/', function ($request, $response) {
 						'code' => 0,
 						'description' => 'The request to SG was unsuccessful'
 					)), 500);
-				} elseif ($page_request->url === "https://www.steamgifts.com/" || $page_request->status_code === 301) {
+				} elseif ($page_request->url === "https://www.steamgifts.com/") {
 					// Giveaway doesn't exist, store and exist. END.
 
-					$stmt = $db->prepare("INSERT INTO GiveawaysGeneral (giv_id, unavailable) VALUES (:giv_id, :unavailable)");
+					$stmt = $db->prepare("INSERT INTO GiveawaysGeneral (giv_id, unavailable) VALUES (:giv_id, :unavailable) ON DUPLICATE KEY UPDATE unavailable=:unavailable2, last_checked=:last_checked");
 					$stmt->execute(array(
 						':giv_id' => $giv_id,
-						':unavailable' => 1
+						':unavailable' => 1,
+						':unavailable2' => 1,
+						':last_checked' => null
 					));
 
 					unset($stmt);
