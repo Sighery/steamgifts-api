@@ -48,8 +48,6 @@ class GiveawayHeader {
 	);
 
 	private $giveaway_row;
-	private $bBL = false;
-
 	private $db;
 	private $giv_id;
 
@@ -72,6 +70,8 @@ class GiveawayHeader {
 		'game_type' => null,
 		'game_title' => null
 	);
+
+	public $bBL = false;
 
 	public $giveaway_inserted_id;
 
