@@ -18,7 +18,7 @@
 	<i class="fa fa-link"></i>
 	<h2 id="GetGivInfo" class="hyperlink-title">GetGivInfo</h2>
 </a>
-<p>Provides general information about a giveaway. This is the information that can be seen when checking the giveaway, the level, the type, the comments, entries, etc. This method implements a cache to avoid sending many unnecesary requests to SG: non-ended giveaways have a cache of 3 hours, while ended giveaways have a cache of 3 days.</p>
+<p>Provides general information about a giveaway. This is the information that can be seen when checking the giveaway, the level, the type, the comments, entries, etc. This method implements a cache to avoid sending unnecesary requests to SG: non-ended giveaways have a cache of 3 hours, while ended giveaways have a cache of 3 days.</p>
 <a class="hidden-link" href="#GetGivInfo-Request">
 	<i class="fa fa-link"></i>
 	<h4 id="GetGivInfo-Request" class="hyperlink-title">REQUEST</h4>
@@ -98,5 +98,88 @@
 	<h4 id="GetGivInfo-Notes" class="hyperlink-title">NOTES</h4>
 </a>
 <p>This method is connected with multiple tables, and the <a class="generic-link" href="interactions#GetGameTitle">Interactions/GetGameTitle</a> method in some cases, and since it depends on Steam not being down the whole request might fail with a 500 status code error and the specific error code 1.</p>
+<hr>
+<a class="hidden-link hyperlink-method" href="#GetGivWinners">
+	<i class="fa fa-link"></i>
+	<h2 id="GetGivWinners" class="hyperlink-title">GetGivWinners</h2>
+</a>
+<p>Provides information on the giveaway winners. <b>This method only allows for giveaways with a maximum of 250 winners for now.</b> This method won't show anonymous winners until they become public. If the giveaway ended less than a day ago the winners data has a cache of 2 hours; if it ended more than a day ago but less than a week ago the winners data has a cache of 12 hours; and if it ended more than a week ago the winners data has a cache of 1 day.</p>
+<a class="hidden-link" href="#GetGivWinners-Request">
+	<i class="fa fa-link"></i>
+	<h4 id="GetGivWinners-Request" class="hyperlink-title">REQUEST</h4>
+</a>
+<p>This is a GET request. The link is <a class="generic-link" href="http://api.sighery.com/SteamGifts/IGiveaways/GetGivWinners/" target="_blank">http://api.sighery.com/SteamGifts/IGiveaways/GetGivWinners/</a>. The valid arguments are:</p>
+<ul>
+	<li class="arguments-list"><b>id</b>: Required. This argument value is the giveaway id.</li>
+	<li class="arguments-list"><b>sgsid</b>: Optional. <b>UNAVAILABLE FOR NOW</b>. This argument value is the PHPSESSID cookie so the request is made using your account, bypassing limitations like the region, group, blacklist and/or whitelist.</li>
+</ul>
+<p><b>Example requests:</b></p>
+<a class="example-link" href="http://api.sighery.com/SteamGifts/IGiveaways/GetGivWinners/?id=tFIrl" target="_blank">http://api.sighery.com/SteamGifts/IGiveaways/GetGivWinners/?id=tFIrl</a>
+<a class="hidden-link" href="#GetGivWinners-SuccessfulResponse">
+	<i class="fa fa-link"></i>
+	<h4 id="GetGivWinners-SuccessfulResponse" class="hyperlink-title hyperlink-title-more-margin">SUCCESSFUL RESPONSE</h4>
+</a>
+<p>The successful JSON response will contain the following keys:</p>
+<ul>
+	<li class="keys-list"><b>id</b>: String. Contains the ID of the giveaway.</li>
+	<li class="keys-list"><b>winners_total</b>: Integer. Contains the total number of winners of a giveaway or <code>null</code> if the giveaway hasn't ended yet.</li>
+	<li class="keys-list"><b>winners</b>: Array. Contains the dictionaries with each winner's data. <b>The API won't include the winners that aren't public yet. To check the amount of public winners (who have marked their win already), you can simply check the length of the array.</b> Each of the dictionaries on the array will have the following keys: <code>nickname</code> for the winner's nickname (string) and <code>marked_status</code> for the marked status of their win (integer, you can check the <a class="generic-link" href="https://github.com/Sighery/steamgifts-api/blob/master/translations/marked-status.json" target="_blank">translation dictionary on the repository</a> to know what each number means). Example:</li>
+	<pre class="code-block" style="width: 350px;">
+<code>{
+	"winners": [
+		{
+			"nickname": "Sighery",
+			"marked_status": 1
+		},
+		{
+			"nickname": "cg",
+			"marked_status": 2
+		}
+	]
+}</code>
+	</pre>
+</ul>
+<a class="hidden-link" href="#GetGivWinners-Errors">
+	<i class="fa fa-link"></i>
+	<h4 id="GetGivWinners-Errors" class="hyperlink-title">ERRORS</h4>
+</a>
+<p>I try to catch every possible error and produce a proper error response, but that isn't always possible. You should prepare your code to handle any unexpected error reported by the API. You could do this by checking the status code of the response, a successful response will always give back a 200 status code.</p>
+<p>If the error was catched, the error response JSON will only have the keys <code>code</code> for the specific code and <code>description</code> for a short description of the error code unless noted otherwise. The list for catchable errors and their specific codes is the following (almost identical to <a class="generic-link" href="#GetGivInfo">IGiveaways/GetGivInfo</a>):</p>
+<ol>
+	<li><p><b>Status code 400</b>: Usually caused by some illegal or missing parameter on the request sent by the user.</p></li>
+	<ul>
+		<li class="keys-list"><b>Code 0</b>: The required <code>id</code> is either missing or is invalid.</li>
+		<li class="keys-list"><b>Code 1</b>: The optional <code>sgsid</code> argument is invalid, contains non alphanumeric characters.</li>
+	</ul>
+	<li><p><b>Status code 500</b>: Usually caused by some error on the request to SteamGifts and/or Steam. Can be caused by them being down as well. Some of the error responses might contain the <code>id</code> key as well with the giveaway ID.</p></li>
+	<ul>
+		<li class="keys-list"><b>Code 0</b>: There was an error with the request to SteamGifts, it could be down.</li>
+		<li class="keys-list"><b>Code 1</b>: There was an error with the request to Steam, it could be down.</li>
+		<li class="keys-list"><b>Code 2</b>: The asked giveaway doesn't exist.</li>
+		<li class="keys-list"><b>Code 3</b>: The giveaway has been deleted. On top of having the usual <code>code</code> and <code>description</code> keys the error JSON will have the following keys as well: <code>id</code> for the ID of the giveaway (string); <code>user</code> with the nickname of the user who created the giveaway (string); <code>reason</code> with the reason (integer, <a class="generic-link" href="https://github.com/Sighery/steamgifts-api/blob/master/translations/deleted-messages.json" target="_blank">check the deleted reasons translation dictionary</a>. It will return one of those integers or 99 if it's a new one); <code>deleted_time</code> with the Unix timestamp of when was it deleted (integer).</li>
+		<li class="keys-list"><b>Code 4</b>: Equal to code 5, but the API detected that it was blacklisted by the creator as well.</li>
+		<li class="keys-list"><b>Code 5</b>: The giveaway is region-locked and the API couldn't access it. On top of having the usual <code>code</code> and <code>description</code> keys the error JSON will have the following keys as well: <code>id</code> for the ID of the giveaway (string); <code>region</code> with the region of the giveaway (integer, one of the numbers on the <a class="generic-link" href="https://github.com/Sighery/steamgifts-api/blob/master/translations/regions.json" target="_blank">regions translation dictionary</a> or 99 if it's a new region not yet supported).</li>
+		<li class="keys-list"><b>Code 6</b>: Equal to code 7, but the API detected that it was blacklisted by the creator as well.</li>
+		<li class="keys-list"><b>Code 7</b>: The giveaway is for whitelist and certain groups only and the API couldn't access it. On top of having the usual <code>code</code> and <code>description</code> keys the error JSON will have the following keys as well: <code>id</code> for the ID of the giveaway (string).</li>
+		<li class="keys-list"><b>Code 8</b>: Equal to code 9, but the API detected that it was blacklisted by the creator as well.</li>
+		<li class="keys-list"><b>Code 9</b>: The giveaway is for whitelist only and the API couldn't access it. On top of having the usual <code>code</code> and <code>description</code> keys the error JSON will have the following keys as well: <code>id</code> for the ID of the giveaway (string).</li>
+		<li class="keys-list"><b>Code 10</b>: Equal to code 11, but the API detected that it was blacklisted by the creator as well.</li>
+		<li class="keys-list"><b>Code 11</b>: The giveaway is for certain groups only and the API couldn't access it. On top of having the usual <code>code</code> and <code>description</code> keys the error JSON will have the following keys as well: <code>id</code> for the ID of the giveaway (string).</li>
+		<li class="keys-list"><b>Code 12</b>: The giveaway has more than 250 winners. For now the API won't parse giveaways with more than 250 winners to avoid stressing the SG servers.</li>
+	</ul>
+</ol>
+<p class="example-error-response">The error response JSON will always have the following structure, however, it might include other keys on top of the <code>code</code> and <code>description</code> keys, check each specific HTML response status code and specific code to know if they include more keys.</p>
+<pre class="code-block"><code>{
+	"errors":
+	{
+		"code": 0,
+		"description": "Description of the HTML response status code and the specific code mentioned on the code key"
+	}
+}</code></pre>
+<a class="hidden-link" href="#GetGivWinners-Notes">
+	<i class="fa fa-link"></i>
+	<h4 id="GetGivWinners-Notes" class="hyperlink-title">NOTES</h4>
+</a>
+<p>As <a class="generic-link" href="#GetGivInfo">IGiveaways/GetGivInfo</a>, this method is connected with multiple tables, and the <a class="generic-link" href="interactions#GetGameTitle">Interactions/GetGameTitle</a> method as well in some cases, and since it depends on Steam not being down the whole request might fail with a 500 status code error and the specific error code 1.</p>
 </body>
 </html>
