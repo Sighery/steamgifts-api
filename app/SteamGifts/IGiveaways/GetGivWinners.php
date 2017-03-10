@@ -5,7 +5,7 @@ require_once(__DIR__ . '/../utils/utilities.php');
 require_once(__DIR__ . '/../utils/dbconn.php');
 
 
-$app->get('/SteamGifts/IGiveaways/GetGivWinners42/', function ($request, $response) {
+$app->get('/SteamGifts/IGiveaways/GetGivWinners/', function ($request, $response) {
 	define('MAX_TIME_WINNERS_FRESH_CACHE', 7200); //2hours for less than a day
 	define('MAX_TIME_WINNERS_RECENT_CACHE', 43200); //12hours for less than a week
 	define('MAX_TIME_WINNERS_OLD_CACHE', 86400); //1day for more than a week
