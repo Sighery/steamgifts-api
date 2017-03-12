@@ -108,7 +108,8 @@ class GiveawayHeader {
 
 				} elseif (strpos($message, "This giveaway is restricted to the following region:") !== false) {
 					$initial_index = strpos($message, ":") + 2;
-					$end_index = strpos($message, "(");
+
+					$end_index = strpos($message, "(") - 1;
 
 					if ($end_index === false) {
 						$region = substr($message, $initial_index);
