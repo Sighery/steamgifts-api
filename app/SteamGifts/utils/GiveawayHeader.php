@@ -109,7 +109,7 @@ class GiveawayHeader {
 				} elseif (strpos($message, "This giveaway is restricted to the following region:") !== false) {
 					$initial_index = strpos($message, ":") + 2;
 
-					$end_index = strpos($message, "(") - 1;
+					$end_index = strpos($message, "(");
 
 					if ($end_index === false) {
 						$region = substr($message, $initial_index);
@@ -118,10 +118,14 @@ class GiveawayHeader {
 						$region = substr($message, $initial_index, $end_index - $initial_index);
 					}
 
-					if (array_key_exists($region, $this->regions_translation) === false) {
-						$region = 99;
-					} else {
+					if (strpos($region, "</a>") !== false) {
+						$region = str_replace("</a>", "", $region);
+					}
+
+					if (array_key_exists($region, $this->regions_translation)) {
 						$region = $this->regions_translation[$region];
+					} else {
+						$region = 99;
 					}
 
 					unset($initial_index);
